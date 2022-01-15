@@ -1,0 +1,56 @@
+library(cowplot)
+library(Seurat)
+library(rhdf5)
+library(ggplot2)
+library(tidyverse)
+library(perm)
+library(ggExtra)
+library(BASiCS)
+
+facs.raw = list.files(path = "D:/raw files",pattern = "facs",full.names = T) # facs raw files list
+organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) #facs organs names
+
+# pre-processing the raw data + downsampling
+for(i in 1:length(facs.raw)){
+  # Reading the meta data categories
+  meta = h5read(facs.raw[i],"uns") 
+  meta = meta[grep("categories",names(meta))]
+  names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
+  
+  SC_t = ReadH5AD(facs.raw[i],assay = "RNA",verbose = F) # reading tissue file in to Seurat object
+  names(Idents(SC_t)) = Cells(SC_t) # setting the ident to cell types
+  
+  # down sampling
+  NC_avg_old = mean(SC_t$nCount_RNA[SC_t$age!=0]) # Old mice mean count
+  NC_avg_young = mean(SC_t$nCount_RNA[SC_t$age==0]) # young mice mean count
+  p = NC_avg_young/NC_avg_old # young-old mean count ratio
+  if(p<1){ # if p>1 we preform down sampling
+    count = SC_t[["RNA"]]@counts # the counts matrix 
+    for(cell in which(SC_t$age>0)){
+      # for each old mice cell we randomly choose (with binomial distribution) the count to keep base on p
+      count[,cell] = rbinom(nrow(count),count[,cell],p)
+    }
+  } else{
+    count = SC_t[["RNA"]]@counts
+  }
+  SC = SetAssayData(SC_t,slot = "counts",new.data = count) # setting new counts matrix
+  
+  # Our data is allready filltered so lets move on to normalizetion and finding highly variable features(feature selection).
+  
+  SC = NormalizeData(SC) # Size factor normalization to 10,000 counts and log transformation
+  SC = FindVariableFeatures(SC,verbose = F) # Finding the 2000 highly variable features 
+  
+  SC = ScaleData(SC,verbose = F,do.center = F) #scaling the data
+  
+  # Adding to the mata data vector of cell type names and vector Old/young
+  SC@active.ident = factor(SC@meta.data$cell.ontology.class,labels = meta$cell_ontology_class) # setting the ident to cell types 
+  SC = AddMetaData(SC,metadata = ifelse(SC@meta.data$age%in%c("18m","21m","24m","30m"),"Old","Young"),col.name = "Age") #Adding Old/Young vector to meta data 
+  SC = AddMetaData(SC,metadata = SC@active.ident,col.name = "Cells") #Adding cell type names to meta data
+  SC$age = factor(SC$age,labels = meta$age) # naming the ages vector in meta data
+  
+  SC = RunPCA(SC,verbose = F) #Run PCA
+  SC = RunTSNE(SC) # Run tsne
+  SC = RunUMAP(SC,dims = 1:10) # Run umap 
+
+  saveRDS(SC,file = paste(organs[i],"rds",sep = ".")) #Saving the Seurat object 
+}
