@@ -1,14 +1,10 @@
-library(cowplot)
 library(Seurat)
 library(rhdf5)
-library(ggplot2)
-library(tidyverse)
-library(perm)
-library(ggExtra)
-library(BASiCS)
 
 facs.raw = list.files(path = "D:/raw files",pattern = "facs",full.names = T) # facs raw files list
-organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) #facs organs names
+
+organs  = sapply(facs.raw,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) #facs organs names
+organs = unname(organs)
 
 # pre-processing the raw data + downsampling
 for(i in 1:length(facs.raw)){
@@ -39,10 +35,8 @@ for(i in 1:length(facs.raw)){
   
   SC = NormalizeData(SC) # Size factor normalization to 10,000 counts and log transformation
   SC = FindVariableFeatures(SC,verbose = F) # Finding the 2000 highly variable features 
-  
   SC = ScaleData(SC,verbose = F,do.center = F) #scaling the data
   
-  # Adding to the mata data vector of cell type names and vector Old/young
   SC@active.ident = factor(SC@meta.data$cell.ontology.class,labels = meta$cell_ontology_class) # setting the ident to cell types 
   SC = AddMetaData(SC,metadata = ifelse(SC@meta.data$age%in%c("18m","21m","24m","30m"),"Old","Young"),col.name = "Age") #Adding Old/Young vector to meta data 
   SC = AddMetaData(SC,metadata = SC@active.ident,col.name = "Cells") #Adding cell type names to meta data
