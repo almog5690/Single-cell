@@ -30,5 +30,5 @@ for(i in 1:length(drop_organs)){
   SC = RunTSNE(SC) 
   SC = RunUMAP(SC,dims = 1:10) 
  
-  saveRDS(SC,file = paste(drop_organs[i],"drop","rds",sep = "."))
+  saveRDS(SC,file = paste(drop_organs[i],"drop","rds",sep = ".")) # Saving the seurat object
 }
