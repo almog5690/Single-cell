@@ -29,7 +29,7 @@ for(i in 1:length(drop_organs)){
         # Filtering genes not expressed in at least 10 cells in both young and old populations
         next()
       } else {
-        expressed_genes = c(good_genes,gene)
+        expressed_genes = c(expressed_genes,gene)
       }
     }
       
