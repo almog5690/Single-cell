@@ -1,50 +1,52 @@
 library(Seurat)
 library(rhdf5)
 
-facs.raw = list.files(path = "D:/raw files",pattern = "facs",full.names = T) # facs raw files list
+facs.raw = list.files(path = "/tmp/raw files",pattern = "facs",full.names = T) # facs raw files list
 
-organs  = sapply(facs.raw,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) #facs organs names
+organs  = sapply(facs.raw,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
 organs = unname(organs)
 
-# pre-processing the raw data + downsampling
+# Pre-processing the raw data + downsampling
 for(i in 1:length(facs.raw)){
   # Reading the meta data categories
   meta = h5read(facs.raw[i],"uns") 
   meta = meta[grep("categories",names(meta))]
   names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
   
-  SC_t = ReadH5AD(facs.raw[i],assay = "RNA",verbose = F) # reading tissue file in to Seurat object
-  names(Idents(SC_t)) = Cells(SC_t) # setting the ident to cell types
+  SingleCell_tissue = ReadH5AD(facs.raw[i],assay = "RNA",verbose = F) # Reading tissue file in to Seurat object
+  names(Idents(SingleCell_tissue)) = Cells(SingleCell_tissue) # Setting the ident to cell types
   
-  # down sampling
-  NC_avg_old = mean(SC_t$nCount_RNA[SC_t$age!=0]) # Old mice mean count
-  NC_avg_young = mean(SC_t$nCount_RNA[SC_t$age==0]) # young mice mean count
-  p = NC_avg_young/NC_avg_old # young-old mean count ratio
-  if(p<1){ # if p>1 we preform down sampling
-    count = SC_t[["RNA"]]@counts # the counts matrix 
-    for(cell in which(SC_t$age>0)){
-      # for each old mice cell we randomly choose (with binomial distribution) the count to keep base on p
+  # Down sampling
+  NCount_avg_old = mean(SingleCell_tissue$nCount_RNA[SingleCell_tissue$age!=0]) # Old mice mean count
+  NCount_avg_young = mean(SingleCell_tissue$nCount_RNA[SingleCell_tissue$age==0]) # Young mice mean count
+  p = NCount_avg_young/NCount_avg_old # Young-old mean count ratio
+  
+  if(p<1){ # If p>1 we preform down sampling
+    count = SingleCell_tissue[["RNA"]]@counts # Counts matrix 
+    for(cell in which(SingleCell_tissue$age>0)){
+      # For each old mice cell we randomly choose (with binomial distribution) the count to keep base on p
       count[,cell] = rbinom(nrow(count),count[,cell],p)
     }
   } else{
-    count = SC_t[["RNA"]]@counts
+    count = SingleCell_tissue[["RNA"]]@counts
   }
-  SC = SetAssayData(SC_t,slot = "counts",new.data = count) # setting new counts matrix
+  SC = SetAssayData(SingleCell_tissue,slot = "counts",new.data = count) # Creating a new Seurat object with the new counts matrix
   
-  # Our data is allready filltered so lets move on to normalizetion and finding highly variable features(feature selection).
-  
+  # Normalizetion and feature selection.
   SC = NormalizeData(SC) # Size factor normalization to 10,000 counts and log transformation
   SC = FindVariableFeatures(SC,verbose = F) # Finding the 2000 highly variable features 
-  SC = ScaleData(SC,verbose = F,do.center = F) #scaling the data
   
-  SC@active.ident = factor(SC@meta.data$cell.ontology.class,labels = meta$cell_ontology_class) # setting the ident to cell types 
+  SC = ScaleData(SC,verbose = F,do.center = F) # Scaling the data
+  
+  SC@active.ident = factor(SC@meta.data$cell.ontology.class,labels = meta$cell_ontology_class) # Setting the active ident to cell types 
   SC = AddMetaData(SC,metadata = ifelse(SC@meta.data$age%in%c("18m","21m","24m","30m"),"Old","Young"),col.name = "Age") #Adding Old/Young vector to meta data 
-  SC = AddMetaData(SC,metadata = SC@active.ident,col.name = "Cells") #Adding cell type names to meta data
+  SC = AddMetaData(SC,metadata = SC@active.ident,col.name = "Cells") # Adding cell type names to meta data
   SC$age = factor(SC$age,labels = meta$age) # naming the ages vector in meta data
   
-  SC = RunPCA(SC,verbose = F) #Run PCA
-  SC = RunTSNE(SC) # Run tsne
-  SC = RunUMAP(SC,dims = 1:10) # Run umap 
+  # Runing PCA,TSNE and UMAP
+  SC = RunPCA(SC,verbose = F) 
+  SC = RunTSNE(SC) 
+  SC = RunUMAP(SC,dims = 1:10)  
 
-  saveRDS(SC,file = paste(organs[i],"rds",sep = ".")) #Saving the Seurat object 
+  saveRDS(SC,file = paste(organs[i],"rds",sep = ".")) # Saving the Seurat object 
 }
