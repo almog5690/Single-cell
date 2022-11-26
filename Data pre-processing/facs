@@ -21,7 +21,7 @@ for(i in 1:length(facs.raw)){
   NCount_avg_young = mean(SingleCell_tissue$nCount_RNA[SingleCell_tissue$age==0]) # Young mice mean count
   p = NCount_avg_young/NCount_avg_old # Young-old mean count ratio
   
-  if(p<1){ # If p>1 we preform down sampling
+  if(p<1){ # If p<1 we preform down sampling
     count = SingleCell_tissue[["RNA"]]@counts # Counts matrix 
     for(cell in which(SingleCell_tissue$age>0)){
       # For each old mice cell we randomly choose (with binomial distribution) the count to keep base on p
