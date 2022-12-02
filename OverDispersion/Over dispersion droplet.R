@@ -42,7 +42,7 @@ for(i in 1:length(drop_organs)){
   
   n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
   n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
-  SC_gene_name = toupper(rownames(SC)) # Gene names (in upper case)
+  SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
 
   cell_types = SC@meta.data$cell.ontology.class # Cell types vector
   cell_types_categories = meta.data.drop[[i]]$cell_ontology_class # Cell type names
@@ -180,6 +180,7 @@ for(i in 1:length(drop_organs)){
     df_fc_reg = rbind(df_fc_reg,data.frame("Organs" = drop_organs[i],"Cell_type" = cell_types_categories[k],
                                            "beta_selc_fc" = fc_lm$coefficients[2],"pval_fc" = summary(fc_lm)$coef[2,4],
                                            "beta_selc_log_fc" = log_fc_lm$coefficients[2],"pval_log_fc" = summary(log_fc_lm)$coef[2,4]))
+    
     # linear regression: log over-dispersion ~ selection + log mean expression (after scaling)
     selc_disp_lm = lm(scale(log2(Disp)) ~ scale(gene_selc[Mean_df$GeneName]) + scale(log2(Mean_all)))
     
@@ -239,7 +240,7 @@ for(i in 1:length(drop_organs)){
     # Length and over-dispersion regression data
     len_OD_reg_data_sm_drop = rbind(len_OD_reg_data_sm_drop,data.frame("Organs" = drop_organs[i],"Cell_type" = cell_types_categories[k],
                                                                        "len_OD_old_reg" = len_OD_old_reg$coef[2],"len_OD_young_reg" = len_OD_young_reg$coef[2],
-                                                                       "len_log_OD_old_reg" = len_log_OD_old_reg$coef[2],"len_log_OD_young_reg" = len_log_OD_young_reg$coef[2],p_val_old,p_val_young,p_val_log_old,p_val_log_young))
+                                                                       p_val_old,p_val_young,p_val_log_old,p_val_log_young))
     
     
   }
