@@ -7,9 +7,7 @@ gene_selection = select$pLI # the selection score vector
 names(gene_selection) = gene_name # naming each score with the gene he belongs to
 
 
-
-
-
+DF_cor = c()
 for(i in 1:length(facs.files)){
   SC = readRDS(file = paste(organs[i],"rds",sep = ".")) # current tissue seurat object
   counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
