@@ -1,19 +1,28 @@
 library(Seurat)
 library(rhdf5)
 
-facs.raw = list.files(path = "/tmp/raw files",pattern = "facs",full.names = T) # facs raw files list
+facs.files = list.files(path = "/tmp/raw files",pattern = "facs",full.names = T) # facs raw files list
 
-organs  = sapply(facs.raw,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
+organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
 organs = unname(organs)
 
+# getting organs metadata 
+meta.data = list() 
+for(i in 1:length(facs.files)){
+  meta = h5read(facs.files[i],"uns")
+  meta = meta[grep("categories",names(meta))]
+  names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
+  meta.data[[i]] = meta
+}
+
 # Pre-processing the raw data + downsampling
-for(i in 1:length(facs.raw)){
+for(i in 1:length(facs.files)){
   # Reading the meta data categories
-  meta = h5read(facs.raw[i],"uns") 
+  meta = h5read(facs.files[i],"uns") 
   meta = meta[grep("categories",names(meta))]
   names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
   
-  SingleCell_tissue = ReadH5AD(facs.raw[i],assay = "RNA",verbose = F) # Reading tissue file in to Seurat object
+  SingleCell_tissue = ReadH5AD(facs.files[i],assay = "RNA",verbose = F) # Reading tissue file in to Seurat object
   names(Idents(SingleCell_tissue)) = Cells(SingleCell_tissue) # Setting the ident to cell types
   
   # Down sampling
