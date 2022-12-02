@@ -20,7 +20,7 @@ gene_name_2 = names(glength_2)
 
 young_ages = "3m" # The ages of the young mice 
 old_ages_1 = c("21m","24m") # The ages of the old mice
-old_ages_2 = c("18m","24m") # secondery old mice age incase no mice in previous "old_ages"
+old_ages_2 = c("18m","24m") # secondary old mice age incase no mice in previous "old_ages"
 
 DF_noise_drop = c()
 DF_cor_selc_disp_drop = c()
