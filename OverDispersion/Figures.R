@@ -52,42 +52,50 @@ plot_grid(title,p,ncol=1, rel_heights=c(0.1, 1))
 
 #### Figure 8
 ## facs
-p_OD_len_sm = ggplot(len_OD_reg_data_sm,aes(len_OD_young_reg,len_OD_old_reg)) + 
+p_log_OD_len_sm = ggplot(len_OD_reg_data_sm,aes(len_log_OD_young_reg,len_log_OD_old_reg)) + 
   geom_point(color = "blue") + 
   geom_abline(slope = 1,intercept = 0,col = "red") + 
-  labs(title = "facs",x = "\u03B2 young",y = "\u03B2 old") +
-  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8))
+  labs(title = "facs",x = TeX(r'($\beta_{o}^{(t,young)}$)'),y = TeX(r'($\beta_{o}^{(t,old)}$)')) +
+  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8)) + 
+  geom_hline(yintercept = 0,lwd = 0.1) + 
+  geom_vline(xintercept = 0,lwd = 0.1)
 
 ## droplet
-p_OD_len_sm_drop = ggplot(len_OD_reg_data_sm_drop,aes(len_OD_young_reg,len_OD_old_reg)) + 
+p_log_OD_len_sm_drop = ggplot(len_OD_reg_data_sm_drop,aes(len_log_OD_young_reg,len_log_OD_old_reg)) + 
   geom_point(color = "blue") + 
   geom_abline(slope = 1,intercept = 0,col = "red") + 
-  labs(title = "facs",x = "\u03B2 young",y = "\u03B2 old") +
-  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8))
+  labs(title = "droplet",x = TeX(r'($\beta_{o}^{(t,young)}$)'),y = TeX(r'($\beta_{o}^{(t,old)}$)')) +
+  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8)) +
+  geom_hline(yintercept = 0,lwd = 0.1) + 
+  geom_vline(xintercept = 0,lwd = 0.1)
 
 # merging facs and droplet plots into figure 8
 title = ggdraw() + draw_label("Length vs Over-dispersion - regressing mean and selection") # plot title
-p = plot_grid(p_OD_len_sm,p_OD_len_sm_drop,labels = LETTERS[1:2])
+p = plot_grid(p_log_OD_len_sm,p_log_OD_len_sm_drop,labels = LETTERS[1:2])
 plot_grid(title,p,ncol=1, rel_heights=c(0.1, 1))
 
 #### Figure 9
 ## facs
-p_OD_selc_reg_sm = ggplot(selc_OD_reg_data_sm,aes(selc_OD_young_reg,selc_OD_old_reg)) + 
+p_log_OD_selc_reg_sm = ggplot(selc_OD_reg_data_sm,aes(selc_log_OD_young_reg,selc_log_OD_old_reg)) + 
   geom_point(color = "blue") + 
   geom_abline(slope = 1,intercept = 0,col = "red") + 
-  labs(title = "facs",x = "\u03B2 young",y = "\u03B2 old") +
-  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8))
+  labs(title = "facs",x = TeX(r'($\beta_{o}^{(t,young)}$)'),y = TeX(r'($\beta_{o}^{(t,old)}$)')) +
+  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8)) + 
+  geom_hline(yintercept = 0,lwd = 0.1) + 
+  geom_vline(xintercept = 0,lwd = 0.1)
 
 ## droplet
-p_OD_selc_reg_sm_drop = ggplot(selc_OD_reg_data_sm_drop,aes(selc_OD_young_reg,selc_OD_old_reg)) + 
+p_log_OD_selc_reg_sm_drop = ggplot(selc_OD_reg_data_sm_drop,aes(selc_log_OD_young_reg,selc_log_OD_old_reg)) + 
   geom_point(color = "blue") + 
   geom_abline(slope = 1,intercept = 0,col = "red") + 
-  labs(title = "facs",x = "\u03B2 young",y = "\u03B2 old") +
-  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8))
+  labs(title = "droplet",x = TeX(r'($\beta_{o}^{(t,young)}$)'),y = TeX(r'($\beta_{o}^{(t,old)}$)')) +
+  theme(plot.title = element_text(size = 10),axis.title = element_text(size = 8)) + 
+  geom_hline(yintercept = 0,lwd = 0.1) + 
+  geom_vline(xintercept = 0,lwd = 0.1)
 
 # merging facs and droplet plots into figure 9
 title = ggdraw() + draw_label("Selection vs Over-dispersion - regressing mean and length") # plot title
-p = plot_grid(p_OD_selc_reg_sm,p_OD_selc_reg_sm_drop,labels = LETTERS[1:2])
+p = plot_grid(p_log_OD_selc_reg_sm,p_log_OD_selc_reg_sm_drop,labels = LETTERS[1:2])
 plot_grid(title,p,ncol=1, rel_heights=c(0.1, 1))
 
 
