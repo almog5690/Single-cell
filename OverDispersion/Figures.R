@@ -99,7 +99,7 @@ p_selc_disp_scale_reg = ggplot(df_selc_reg_facs,aes(y = reorder(CT,beta_selc_all
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "facs",x = "\u03B2 selection",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "facs",x = TeX(r'($\beta^{(t)}_{s}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 ## droplet
@@ -109,7 +109,7 @@ p_selc_disp_scale_reg_drop = ggplot(df_selc_reg,aes(y = reorder(CT,beta_selc_all
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "droplet",x = "\u03B2 selection",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "droplet",x = TeX(r'($\beta^{(t)}_{s}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 # merging facs and droplet plots into figure 12
@@ -126,7 +126,7 @@ p_selc_disp_scale_log_fc_reg = ggplot(df_fc_reg_facs,aes(y = reorder(CT,beta_sel
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "facs",x = "\u03B2 selection",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "facs",x = TeX(r'($\beta^{(t)}_{s}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 ## droplet
@@ -153,7 +153,7 @@ p_len_disp_scale_reg = ggplot(df_len_reg_facs,aes(y = reorder(CT,beta_len_all),x
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "facs",x = "\u03B2 length",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "facs",x = TeX(r'($\beta^{(t)}_{l}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 ## droplet
@@ -163,7 +163,7 @@ p_len_disp_scale_reg_drop = ggplot(df_len_reg,aes(y = reorder(CT,beta_len_all),x
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "droplet",x = "\u03B2 length",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "droplet",x = TeX(r'($\beta^{(t)}_{l}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 # merging facs and droplet plots into figure 14
@@ -177,7 +177,7 @@ p_len_disp_scale_reg_fc = ggplot(df_len_reg_facs,aes(y = reorder(CT,beta_len_fc)
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "facs",x = "\u03B2 length",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "facs",x = TeX(r'($\beta^{(t)}_{l}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 ## droplet
@@ -185,7 +185,7 @@ p_len_disp_scale_reg_fc_drop = ggplot(df_len_reg,aes(y = reorder(CT,beta_len_fc)
   geom_bar(stat = "identity") + 
   theme_classic() +
   scale_fill_gradient2(high = "red",mid = "white",low = "blue",midpoint = -log10(0.05)) +
-  labs(title = "droplet",x = "\u03B2 length",y = "Cell types",fill = "-log10(P_val)") +
+  labs(title = "droplet",x = TeX(r'($\beta^{(t)}_{l}$)'),y = "Cell types",fill = TeX(r'($-log_{10}(\it{Pval})$)')) +
   theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
 
 # merging facs and droplet plots into figure 15
