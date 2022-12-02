@@ -28,6 +28,8 @@ DF_cor_len_disp_drop = c()
 gene_OD_drop = c()
 df_fc = c();df_fc_reg = c()
 df_selc_reg = c();df_len_reg = c()
+selc_OD_reg_data_sm_drop = c()
+len_OD_reg_data_sm_drop = c()
 for(i in 1:length(drop_organs)){
   SC = readRDS(file = paste(drop_organs[i],"drop","rds",sep = ".")) # current tissue seurat object
   young.ind = c(SC@meta.data$age %in% young_ages) # index for cells that came from young mouses
@@ -68,30 +70,31 @@ for(i in 1:length(drop_organs)){
   if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1)) 
 
   for(k in cells_ind){
-    # Old Markov chain file name
-    old_file = paste0("E:/chains/","chain_",paste(drop_organs[i],cell_types_categories[k],"21-24m","drop"),".Rds")
-    # Young Markov chain file name
-    young_file = paste0("E:/chains/","chain_",paste(drop_organs[i],cell_types_categories[k],"3m","drop"),".Rds")
-    
-    if(!(file.exists(old_file) & file.exists(young_file))) next() # Checking if both old and young Markov chain files exist.
-    
+        
     # Differential over-dispersion test results file
-    test_file = paste("E:/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData")
-    if(!file.exists(test_file)) next() # Checking if the file exist
-    
-    # Loading Marovchain files
-    chain_old = BASiCS_LoadChain(RunName = paste(drop_organs[i],cell_types_categories[k],"21-24m","drop"),StoreDir = "E:/chains")
-    chain_young = BASiCS_LoadChain(RunName = paste(drop_organs[i],cell_types_categories[k],"3m","drop"),StoreDir = "E:/chains")
-    
-    
-    # Differential over-dispersion test - only on genes without significant
-    difference in mean expression
-    test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
-                         GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
-                         EpsilonM = 0, EpsilonD = log2(1.5),
-                         EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10)
-     
-    # save(test,file = paste("E:/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData"))
+    test_file = paste("/tmp/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData")
+    if(!file.exists(test_file)){ # Checking if the file exist
+      load(test_file)
+    } else {
+      # Old Markov chain file name
+      old_file = paste0("/tmp/chains","chain_",paste(drop_organs[i],cell_types_categories[k],"21-24m","drop"),".Rds")
+      # Young Markov chain file name
+      young_file = paste0("/tmp/chains","chain_",paste(drop_organs[i],cell_types_categories[k],"3m","drop"),".Rds")
+      
+      if(!(file.exists(old_file) & file.exists(young_file))) next() # Checking if both old and young Markov chain files exist.
+      
+      # Loading Marovchain files
+      chain_old = BASiCS_LoadChain(RunName = paste(drop_organs[i],cell_types_categories[k],"21-24m","drop"),StoreDir = "/tmp/chains")
+      chain_young = BASiCS_LoadChain(RunName = paste(drop_organs[i],cell_types_categories[k],"3m","drop"),StoreDir = "/tmp/chains")
+      
+      
+      # Differential over-dispersion test - only on genes without significant difference in mean expression
+      test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
+                           GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
+                           EpsilonM = 0, EpsilonD = log2(1.5),
+                           EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10)
+      
+    }
     
     # Differential over-dispersion test results table
     df = test@Results$Disp@Table
