@@ -76,11 +76,6 @@ for(i in 1:length(facs.files)){
     fc_cor = cor((mean_old/mean_young),gene_selc[genes_ind_young],use = "complete.obs",method = "spearman")
     pval_fc = cor.test((mean_old/mean_young),gene_selc[genes_ind_young],use = "complete.obs",method = "spearman")$p.value
     
-    gene_selc_old = gene_selc[genes_ind_old]
-    gene_mean_old = gene_mean_old[genes_ind_old]
-    gene_selc_young = gene_selc[genes_ind_young]
-    gene_mean_young = gene_mean_young[genes_ind_young]
-    
     # mean-selection spearman correlation for both age groups
     old_cor_spearman = cor(gene_selc[genes_ind_old],mean_old, use = "complete.obs",method = "spearman")
     young_cor_spearman = cor(gene_selc[genes_ind_young],mean_young, use = "complete.obs",method = "spearman")
