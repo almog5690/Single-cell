@@ -215,18 +215,22 @@ for(i in 1:length(drop_organs)){
     # Linear regression: selection ~ young over-dispersion + young mean  + length
     selc_OD_young_reg = lm(gene_selc[names(Disp)] ~ Disp_young + Mean_young + gene_length_2[names(Disp)])
     
-    # Linear regression: selection ~ old over-dispersion + old mean  + length
-    selc_log_OD_old_reg = lm(gene_selc[names(Disp)] ~ log(Disp_old) + Mean_old + gene_length_2[names(Disp)])
-    # old over-dispersion vs selection and young mean linear regression
-    selc_log_OD_young_reg = lm(gene_selc[names(Disp)] ~ log(Disp_young) + Mean_young + gene_length_2[names(Disp)])
-    
     p_val_old = summary(selc_OD_old_reg)$coef[2,4]
     p_val_young = summary(selc_OD_young_reg)$coef[2,4]
+    
+    # Linear regression: selection ~ log(old over-dispersion) + log(old mean)  + length
+    selc_log_OD_old_reg = lm(gene_selc[names(Disp)] ~ log(Disp_old) + log(Mean_old) + gene_length_2[names(Disp)])
+    # Linear regression: selection ~ log(young over-dispersion) + log(young mean)  + length
+    selc_log_OD_young_reg = lm(gene_selc[names(Disp)] ~ log(Disp_young) + log(Mean_young) + gene_length_2[names(Disp)])
+    
+    p_val_log_old = summary(selc_log_OD_old_reg)$coef[2,4]
+    p_val_log_young = summary(selc_log_OD_young_reg)$coef[2,4]
+    
     
     # selection and over-dispersion regression data
     selc_OD_reg_data_sm_drop = rbind(selc_OD_reg_data_sm_drop,data.frame("Organs" = drop_organs[i],"Cell_type" = cell_types_categories[k],
                                                                          "selc_OD_old_reg" = selc_OD_old_reg$coef[2],"selc_OD_young_reg" = selc_OD_young_reg$coef[2],
-                                                                         p_val_old,p_val_young))
+                                                                         "selc_log_OD_old_reg" = selc_log_OD_old_reg$coef[2],"selc_log_OD_young_reg" = selc_log_OD_young_reg$coef[2],p_val_old,p_val_young,p_val_log_old,p_val_log_young))
     
     
     # Linear regression: Length ~ old over-dispersion + old mean  + selection
@@ -237,11 +241,18 @@ for(i in 1:length(drop_organs)){
     p_val_old = summary(len_OD_old_reg)$coef[2,4]
     p_val_young = summary(len_OD_young_reg)$coef[2,4]
     
+    # Linear regression: Length ~ log(old over-dispersion) + log(old mean)  + selection
+    len_log_OD_old_reg = lm(gene_length_2[names(Disp)] ~ log(Disp_old) + log(Mean_old) + gene_selc[names(Disp)])
+    # Linear regression: Length ~ log(young over-dispersion) + log(young mean)  + selection
+    len_log_OD_young_reg = lm(gene_length_2[names(Disp)] ~ log(Disp_young) + log(Mean_young) + gene_selc[names(Disp)])
     
-    # Length and over-dispersion regression data
+    p_val_log_old = summary(len_log_OD_old_reg)$coef[2,4]
+    p_val_log_young = summary(len_log_OD_young_reg)$coef[2,4]
+    
+    # selection and over-dispersion regression data
     len_OD_reg_data_sm_drop = rbind(len_OD_reg_data_sm_drop,data.frame("Organs" = drop_organs[i],"Cell_type" = cell_types_categories[k],
                                                                        "len_OD_old_reg" = len_OD_old_reg$coef[2],"len_OD_young_reg" = len_OD_young_reg$coef[2],
-                                                                       p_val_old,p_val_young,p_val_log_old,p_val_log_young))
+                                                                       "len_log_OD_old_reg" = len_log_OD_old_reg$coef[2],"len_log_OD_young_reg" = len_log_OD_young_reg$coef[2],p_val_old,p_val_young,p_val_log_old,p_val_log_young))
     
     
   }
