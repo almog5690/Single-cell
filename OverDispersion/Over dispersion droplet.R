@@ -1,9 +1,5 @@
-library(cowplot)
 library(Seurat)
-library(ggplot2)
-library(tidyverse)
 library(BASiCS)
-library(dplyr)
 
 # reading the selection score data
 select = read.delim("gnomad.v2.1.1.lof_metrics.by_gene.txt")
@@ -218,6 +214,11 @@ for(i in 1:length(drop_organs)){
     selc_OD_old_reg = lm(gene_selc[names(Disp)] ~ Disp_old + Mean_old + gene_length_2[names(Disp)])
     # Linear regression: selection ~ young over-dispersion + young mean  + length
     selc_OD_young_reg = lm(gene_selc[names(Disp)] ~ Disp_young + Mean_young + gene_length_2[names(Disp)])
+    
+    # Linear regression: selection ~ old over-dispersion + old mean  + length
+    selc_log_OD_old_reg = lm(gene_selc[names(Disp)] ~ log(Disp_old) + Mean_old + gene_length_2[names(Disp)])
+    # old over-dispersion vs selection and young mean linear regression
+    selc_log_OD_young_reg = lm(gene_selc[names(Disp)] ~ log(Disp_young) + Mean_young + gene_length_2[names(Disp)])
     
     p_val_old = summary(selc_OD_old_reg)$coef[2,4]
     p_val_young = summary(selc_OD_young_reg)$coef[2,4]

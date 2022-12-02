@@ -6,6 +6,15 @@ droplet.files = droplet.files[-c(6,21,2,15,16)] # Removing Large intestine, Fat,
 drop_organs = sapply(droplet.files,function(f) unlist(strsplit(f,"[.]"))[1]) # List of droplet organs
 drop_organs = unname(drop_organs)
 
+meta.data.drop = list() # getting organs metadata 
+for(i in 1:length(droplet.files)){
+  print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad",sep = "_")))
+  meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
+  meta = meta[grep("categories",names(meta))]
+  names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
+  meta.data.drop[[i]] = meta
+}
+
 for(i in 1:length(drop_organs)){
   # Reading the meta data categories
   meta = h5read(paste0("/tmp/raw files/",drop.files[i]),"uns")
