@@ -43,10 +43,10 @@ for(i in 1:length(drop_organs)){
       young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_ind & young.ind],BatchInfo = batch[cell_types == ct_ind & young.ind]) 
       
       # Creating BASiCS chain for old and young mice
-      chain_old = BASiCS_MCMC(Data = old_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
+      chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                               WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
                               RunName = paste(drop_organs[i],cell_types_categories[ct_ind+1],"old")) 
-      chain_young = BASiCS_MCMC(Data = young_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
+      chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                                 WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
                                 RunName = paste(drop_organs[i],cell_types_categories[ct_ind+1],"young"))  
       
