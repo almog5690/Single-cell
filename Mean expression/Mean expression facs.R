@@ -1,5 +1,14 @@
 library(Seurat)
 
+# loading the list of tissue from facs technology and its meta data names
+load("facs.files.RData")
+load("meta.data.facs.RData")
+
+# facs organs names vector
+organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) #facs organs names
+organs[5] = "Brain_Non-Myeloid"
+organs = unname(organs)
+
 # reading the selection score data
 select = read.delim("gnomad.v2.1.1.lof_metrics.by_gene.txt")
 gene_name = toupper(select$gene) # making all the gene names in to upper case letters
