@@ -2,7 +2,7 @@ library(Seurat)
 library(rhdf5)
 
 #main.dir = "C:/Code/Github/Single-cell"  # Change to your local path. This path should be used everywhere
-setwd(main.dir)
+# setwd(main.dir)
 
 preprocess_droplet <- function()
 {
@@ -45,14 +45,17 @@ preprocess_droplet <- function()
     SC = RunUMAP(SC,dims = 1:10) 
     
     saveRDS(SC, file = paste(drop_organs[i],"drop","rds",sep = ".")) # Saving the seurat object
-  }
+  }   # end loop on tissues 
+  
+  # save the drop_organs variable and possibly additional variables to an RData/RDS file. This will be loaded next time without running the preprocessing again.
   
 }  # end function preprocess_droplet
 
 
+# Preprocess the facs dataset 
 preprocess_facs <- function()
 {
-  facs.files = list.files(path = "/tmp/raw files",pattern = "facs",full.names = T) # facs raw files list
+  facs.files = list.files(path = raw.data.dir, pattern = "facs",full.names = T) # facs raw files list
   
   organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
   organs = unname(organs)
@@ -92,7 +95,7 @@ preprocess_facs <- function()
     }
     SC = SetAssayData(SingleCell_tissue,slot = "counts",new.data = count) # Creating a new Seurat object with the new counts matrix
     
-    # Normalizetion and feature selection.
+    # Normalization and feature selection.
     SC = NormalizeData(SC) # Size factor normalization to 10,000 counts and log transformation
     SC = FindVariableFeatures(SC,verbose = F) # Finding the 2000 highly variable features 
     
@@ -103,7 +106,7 @@ preprocess_facs <- function()
     SC = AddMetaData(SC,metadata = SC@active.ident,col.name = "Cells") # Adding cell type names to meta data
     SC$age = factor(SC$age,labels = meta$age) # naming the ages vector in meta data
     
-    # Runing PCA,TSNE and UMAP
+    # Running PCA,TSNE and UMAP
     SC = RunPCA(SC,verbose = F) 
     SC = RunTSNE(SC) 
     SC = RunUMAP(SC,dims = 1:10)  

@@ -3,7 +3,6 @@ library(BASiCS)
 
 
 overdisperssion_droplet <- function() {
-  
   # reading the selection score data
   select = read.delim(paste0(gene.data.dir, "gnomad.v2.1.1.lof_metrics.by_gene.txt"))
   gene_name = toupper(select$gene) # making all the gene names in to upper case letters
@@ -499,7 +498,6 @@ overdisperssion_facs <- function() {
       len_OD_reg_data_sm = rbind(len_OD_reg_data_sm,data.frame("Organs" = organs[i],"Cell_type" = cell_types_categories[ct_ind + 1],
                                                                "len_OD_old_reg" = len_OD_old_reg$coef[2],"len_OD_young_reg" = len_OD_young_reg$coef[2],
                                                                "len_log_OD_old_reg" = len_log_OD_old_reg$coef[2],"len_log_OD_young_reg" = len_log_OD_young_reg$coef[2],p_val_old,p_val_young,p_val_log_old,p_val_log_young))
-      
       
     }
   } # end loop on tissues 
