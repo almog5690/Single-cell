@@ -1,5 +1,16 @@
 library(Seurat)
 
+droplet.files = list.files(pattern = "drop.r") # list of tissue from droplet technology
+#removing large intestine and trachea because they have only one age group and also fat,skin and pancreas.
+droplet.files = droplet.files[-grep(c("Fat|Large_Intestine|Skin|Pancreas|Trachea"),droplet.files)]
+drop_organs = sapply(droplet.files,function(f) unlist(strsplit(f,"[.]"))[1]) 
+drop_organs = unname(drop_organs) # droplet organs vector
+
+# loading the meta data names for the droplet technology
+load("meta.data.drop.Rdata")
+
+
+
 # reading the selection score data
 select = read.delim("gnomad.v2.1.1.lof_metrics.by_gene.txt")
 gene_name = toupper(select$gene) # making all the gene names in to upper case letters
