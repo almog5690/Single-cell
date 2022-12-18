@@ -6,6 +6,7 @@ mean_expression_droplet <- function(data.type) {
   mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
   samples <- get_tissue_file_names(data.type)
   
+  
   # reading the selection score data
   select = read.delim(paste0(gene.data.dir, "/gnomad.v2.1.1.lof_metrics.by_gene.txt"))
   gene_name = toupper(select$gene) # making all the gene names in to upper case letters

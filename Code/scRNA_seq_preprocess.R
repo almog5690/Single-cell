@@ -5,7 +5,7 @@ library(rhdf5)
 # setwd(main.dir)
 
 
-get_meta_data <- fuction(data.type, force.rerun = FALSE)
+get_meta_data <- function(data.type, force.rerun = FALSE)
 {
   meta.data.file <- paste0(processed.data.dir, 'meta.data.', data.type, '.RData')
   if(file.exists(meta.data.file) & force.rerun == FALSE) {
