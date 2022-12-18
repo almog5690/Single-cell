@@ -9,7 +9,6 @@ get_tissue_file_names <- function(data.type)
   # load("facs.files.RData")
   # load("meta.data.facs.RData")
   
-  
   if(data.type == "TM.droplet")
   {
     load(paste0(processed.data.dir, "/meta.data.drop.RData"))
@@ -40,7 +39,7 @@ get_tissue_file_names <- function(data.type)
 # Read feature files
 # Output will be a list with names being the genes, and values being numerical values.
 # Gene names are according to Ensembl (???)
-read_gene_features(feature.name)
+read_gene_features  <- function(feature.name)
 {
   if(feature.name == "selection")
   {
