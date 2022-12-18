@@ -1,5 +1,5 @@
 # Utilities needed for single cell analysis and visualization 
-
+library(readxl)
 
 # Get tissues. Use the processed files if they exist (otherwise need to go back to raw files?)
 get_tissue_file_names <- function(data.type)
@@ -36,6 +36,44 @@ get_tissue_file_names <- function(data.type)
   return(list(file.names = files.names, organs = organs))
 }
 
+
+# Read feature files
+# Output will be a list with names being the genes, and values being numerical values.
+# Gene names are according to Ensembl (???)
+read_gene_features(feature.name)
+{
+  if(feature.name == "selection")
+  {
+    select <- read.delim(paste0(gene.data.dir, "gnomad.v2.1.1.lof_metrics.by_gene.txt"))
+    gene.names = toupper(select$gene) # making all the gene names in to upper case letters
+    gene.values = select$pLI # the selection score vector
+    names(gene.values) = gene.names # naming each score with the gene it belongs to
+  }
+  if(feature.name == "gene.len")
+  {
+    # reading the transcript length data
+    length_data = read.delim(paste0(gene.data.dir, "mart_export.txt"))
+    gene.values = length_data[,7] # gene length vector
+    names(gene.values) = toupper(length_data[,6]) # Add gene names. Note: there are many values per gene 
+  }
+  if(feature.name == "TATA")
+  {
+    tata.data <- read.delim(paste0(gene.data.dir, "mm10_tata_annotation_v3.3.tsv"))
+    # TATA BOX
+    gene.values <- as.integer(unlist(lapply(tata.data$TATA.Box.TBP..Promoter.Homer.Distance.From.Peak.sequence.strand.conservation., nchar)) > 0)
+    gene.values2 <- tata.data$GC.
+    gene.values2 <- tata.data$CpG.
+    names(gene.values) <- tata.data$Gene.Name
+  }
+  if(feature.name == "mRNA.half.life")
+  {
+    half.life.data <-  read_excel(paste0(gene.data.dir, "13059_2022_2811_MOESM3_ESM.xlsx"), sheet = "mouse", skip =2)
+    gene.values <- half.life.data$Half_life_PC1
+    names(gene.values) <- half.life.data$Gene.name
+  }
+  
+  return(gene.values)
+}
 
 # Computing density for plotting
 get_density <- function(x, y, ...) { # function for figures 4 and 5

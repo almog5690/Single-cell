@@ -10,12 +10,12 @@ library(ggpointdensity)
 # Main script for analysis of single-cell gene-expression data
 
 # Directories 
-main.dir = "C:/Code/Github/Single-cell"  # Change to your local path. This path should be used everywhere
-data.dir = paste0(main.dir, '/Data/TabulaMuris') # Can change so code and data may be at different locations. Also change per dataset
-code.dir <- paste0(main.dir, '/Code')  # src files 
-raw.data.dir <- paste0(data.dir, '/Raw')  # For raw scRNA-seq gene expression files 
-processed.data.dir <- paste0(data.dir, '/Processed')  # For processed scRNA-seq gene expression files 
-gene.data.dir <- paste0(main.dir, '/GeneLevelData')  # For gene features 
+main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere
+data.dir = paste0(main.dir, 'Data/TabulaMuris/') # Can change so code and data may be at different locations. Also change per dataset
+code.dir <- paste0(main.dir, 'Code/')  # src files 
+raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files 
+processed.data.dir <- paste0(data.dir, '/Processed/')  # For processed scRNA-seq gene expression files 
+gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features 
 setwd(code.dir)
 
 

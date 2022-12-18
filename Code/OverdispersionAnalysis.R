@@ -2,7 +2,7 @@ library(Seurat)
 library(BASiCS)
 
 
-overdisperssion_droplet <- function() {
+overdispersion_droplet <- function() {
   # reading the selection score data
   select = read.delim(paste0(gene.data.dir, "gnomad.v2.1.1.lof_metrics.by_gene.txt"))
   gene_name = toupper(select$gene) # making all the gene names in to upper case letters
@@ -17,7 +17,7 @@ overdisperssion_droplet <- function() {
   
   young_ages = "3m" # The ages of the young mice 
   old_ages_1 = c("21m","24m") # The ages of the old mice
-  old_ages_2 = c("18m","24m") # secondary old mice age incase no mice in previous "old_ages"
+  old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
   
   DF_noise_drop = c()
   DF_cor_selc_disp_drop = c()
@@ -257,10 +257,10 @@ overdisperssion_droplet <- function() {
     }
   }  # End loop on tissues 
   
-} # End overdisperssion_droplet function 
+} # End overdispersion_droplet function 
 
 
-overdisperssion_facs <- function() {
+overdispersion_facs <- function() {
   
   # reading the selection score data
   select = read.delim("gnomad.v2.1.1.lof_metrics.by_gene.txt")
@@ -501,6 +501,6 @@ overdisperssion_facs <- function() {
       
     }
   } # end loop on tissues 
-} # end overdisperssion_facs function
+} # end overdispersion_facs function
 
 
