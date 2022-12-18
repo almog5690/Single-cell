@@ -8,14 +8,31 @@ library(ggpointdensity)
 
 
 # Main script for analysis of single-cell gene-expression data
+user.name = "Or" #  "Almog"  # Or 
+if(user.name == "Almog")
+{
+  main.dir = "C:/???/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+  data.dir = "???"  # Change to directory with all the data
+} else # Or 
+{
+  # Directories 
+  main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+  data.dir = paste0(main.dir, 'Data/TabulaMuris/') # Can change so code and data may be at different locations. Also change per dataset
+}
 
-# Directories 
-main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere
-data.dir = paste0(main.dir, 'Data/TabulaMuris/') # Can change so code and data may be at different locations. Also change per dataset
 code.dir <- paste0(main.dir, 'Code/')  # src files 
-raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files 
-processed.data.dir <- paste0(data.dir, '/Processed/')  # For processed scRNA-seq gene expression files 
-gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features 
+
+raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
+processed.data.dir <- paste0(data.dir, '/Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
+                                                       # after running scRNA_seq_preprocess.R. Format: *.rds files. 
+                                                       # This directory will also contain one meta.data file for each dataset. 
+gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features (selection, length ...)
+
+analysis.results.dir <- paste0(data.dir, '/Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
+analysis.figure.dir <- paste0(analysis.results.dir, '/Figures/')  # For analysis figures   
+basics.dir <- paste0(analysis.results.dir, '/BASiCS/')  # For BASiCS output 
+
+
 setwd(code.dir)
 
 
@@ -65,7 +82,7 @@ if(var.analysis)
 # Plot figures: 
 if(mean.figures)
 {
-  DF_cor = draw_mean_figures(data.type)
+  DF_cor = draw_mean_figures(data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 }
 
 if(mean.figures)

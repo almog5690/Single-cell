@@ -4,6 +4,36 @@ library(rhdf5)
 #main.dir = "C:/Code/Github/Single-cell"  # Change to your local path. This path should be used everywhere
 # setwd(main.dir)
 
+
+get_meta_data <- fuction(data.type, force.rerun = FALSE)
+{
+  meta.data.file <- paste0(processed.data.dir, 'meta.data.', data.type, '.RData')
+  if(file.exists(meta.data.file) & force.rerun == FALSE) {
+       load(meta.data.file)
+       return(meta.data)
+  }
+
+  if(data.type == "TM.droplet")
+  {
+    meta.data = list() # getting organs metadata 
+    for(i in 1:length(droplet.files)){
+      print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad",sep = "_")))
+      meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
+      meta = meta[grep("categories",names(meta))]
+      names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
+      meta.data[[i]] = meta
+    }
+  }
+  if(data.type == "TM.facs") # Fill in .. 
+  {
+    
+  }
+  
+  save(meta.data, file = meta.data.file)  
+  return(meta.data)
+}
+
+
 preprocess_droplet <- function()
 {
   droplet.files = list.files(path = raw.data.dir, pattern = "drop.r")  # Raw data should be in the data sub-directory
@@ -11,15 +41,8 @@ preprocess_droplet <- function()
   drop_organs = sapply(droplet.files,function(f) unlist(strsplit(f,"[.]"))[1]) # List of droplet organs
   drop_organs = unname(drop_organs)
   
-  meta.data.drop = list() # getting organs metadata 
-  for(i in 1:length(droplet.files)){
-    print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad",sep = "_")))
-    meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
-    meta = meta[grep("categories",names(meta))]
-    names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
-    meta.data.drop[[i]] = meta
-  }
-  
+  meta.data.drop = get_meta_data(data.type) # getting organs metadata 
+
   for(i in 1:length(drop_organs)){
     # Reading the meta data categories
     meta = h5read(paste0("/tmp/raw files/",drop.files[i]),"uns")

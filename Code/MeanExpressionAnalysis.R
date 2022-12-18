@@ -3,6 +3,7 @@ library(Seurat)
 
 # Perform mean expression analysis for TM droplet dataset 
 mean_expression_droplet <- function(data.type) {
+  mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
   samples <- get_tissue_file_names(data.type)
   
   # reading the selection score data
@@ -112,6 +113,11 @@ mean_expression_droplet <- function(data.type) {
       
     }  # end loop on cell-types in tissue
   }  # end loop on tissues
+  
+  # Save dataframe to file: 
+  save(mean.analysis.outfile, DF_cor_drop)
+  # Save also to excel? 
+  return(DF_cor_drop)
   
 } # End function mean expression droplet 
 
