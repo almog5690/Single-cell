@@ -7,7 +7,6 @@ library(ggpointdensity)
 source("scRNA_seq_utilities.R")
 
 
-
 draw_mean_figures <- function(DF_core, fig.num) {
   if(fig.num == 1)  #### Figure 1
   {

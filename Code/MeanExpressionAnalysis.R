@@ -2,7 +2,9 @@ library(Seurat)
 
 
 # Perform mean expression analysis for TM droplet dataset 
-mean_expression_droplet <- function() {
+mean_expression_droplet <- function(data.type) {
+  samples <- get_tissue_file_names(data.type)
+  
   # reading the selection score data
   select = read.delim(paste0(gene.data.dir, "/gnomad.v2.1.1.lof_metrics.by_gene.txt"))
   gene_name = toupper(select$gene) # making all the gene names in to upper case letters
@@ -15,8 +17,10 @@ mean_expression_droplet <- function() {
   old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
   
   DF_cor_drop = c()
-  for(i in 1:length(drop_organs)){
-    SC = readRDS(file = paste(drop_organs[i],"drop","rds",sep = ".")) # current tissue seurat object
+  for(i in 1:length(samples$organs)){
+    read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".drop.rds")
+    print(read.file)
+    SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".drop.rds")) # current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
     young.ind = c(SC@meta.data$age %in% young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(SC@meta.data$age %in% old_ages_1) # index for cells that came from old mouses
@@ -33,7 +37,7 @@ mean_expression_droplet <- function() {
     rownames(counts.mat) = SC_gene_name 
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
-    cell_types_categories = meta.data.drop[[i]]$cell_ontology_class # Cell type names
+    cell_types_categories = meta.data.drop[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
     n_cell_types = max(cell_types) # Number of cell types
     earase = vector()
     
@@ -102,7 +106,7 @@ mean_expression_droplet <- function() {
       
       
       # data frame containing young and old mean-selection correlation for all cell-types
-      DF_cor_drop = rbind(DF_cor_drop,data.frame("Organs" = drop_organs[i],"Cell_type" = cell_types_categories[k],mean_selc_cor,pval_all,
+      DF_cor_drop = rbind(DF_cor_drop,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],mean_selc_cor,pval_all,
                                                  "selc_mean_old_cor_spearman" = old_cor_spearman,"selc_mean_young_spearman" = young_cor_spearman,
                                                  p_val_old,p_val_young,fc_cor,pval_fc))
       
