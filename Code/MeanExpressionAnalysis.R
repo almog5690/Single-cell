@@ -94,11 +94,11 @@ mean_expression_droplet <- function() {
       
       
       # mean-selection Spearman correlation for both age groups
-      old_cor_spearman = cor(gene_selc[genes_ind_old],mean_old, use = "complete.obs",method = "spearman")
-      young_cor_spearman = cor(gene_selc[genes_ind_young],mean_young, use = "complete.obs",method = "spearman")
+      old_cor_spearman = cor(gene_selc_old,gene_mean_old, use = "complete.obs",method = "spearman")
+      young_cor_spearman = cor(gene_selc_young,gene_mean_young, use = "complete.obs",method = "spearman")
       # mean-selection Spearman correlation P values for both age groups
-      p_val_old = cor.test(gene_selc[genes_ind_old],mean_old, use = "complete.obs",method = "spearman")$p.value
-      p_val_young = cor.test(gene_selc[genes_ind_young],mean_young, use = "complete.obs",method = "spearman")$p.value
+      p_val_old = cor.test(gene_selc_old,gene_mean_old, use = "complete.obs",method = "spearman")$p.value
+      p_val_young = cor.test(gene_selc_young,gene_mean_young, use = "complete.obs",method = "spearman")$p.value
       
       
       # data frame containing young and old mean-selection correlation for all cell-types
@@ -191,10 +191,10 @@ mean_expression_facs <- function() {
       pval_fc = cor.test((mean_old/mean_young),gene_selc[genes_ind_young],use = "complete.obs",method = "spearman")$p.value
       
       # mean-selection spearman correlation for both age groups
-      old_cor_spearman = cor(gene_selc[genes_ind_old],mean_old, use = "complete.obs",method = "spearman")
+      old_cor_spearman = cor(gene_selc[genes_ind_young],mean_old, use = "complete.obs",method = "spearman")
       young_cor_spearman = cor(gene_selc[genes_ind_young],mean_young, use = "complete.obs",method = "spearman")
       # mean-selection spearman correlation P values for both age groups
-      p_val_old = cor.test(gene_selc[genes_ind_old],mean_old, use = "complete.obs",method = "spearman")$p.value
+      p_val_old = cor.test(gene_selc[genes_ind_young],mean_old, use = "complete.obs",method = "spearman")$p.value
       p_val_young = cor.test(gene_selc[genes_ind_young],mean_young, use = "complete.obs",method = "spearman")$p.value
       
       # data frame containing young and old mean-selection correlation for all cell-types
