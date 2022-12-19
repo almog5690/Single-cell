@@ -2,27 +2,39 @@ library(Seurat)
 
 
 # Perform mean expression analysis for TM droplet dataset 
-mean_expression_droplet <- function(data.type) {
+mean_expression_droplet <- function(data.type, force.rerun = FALSE) {
   mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
   samples <- get_tissue_file_names(data.type)
   
+  meta.data = get_meta_data(data.type)
+  
+  if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
+  {
+    load(mean.analysis.outfile)
+    return(DF_cor)
+  }
   
   # reading the selection score data
-  select = read.delim(paste0(gene.data.dir, "/gnomad.v2.1.1.lof_metrics.by_gene.txt"))
-  gene_name = toupper(select$gene) # making all the gene names in to upper case letters
-  gene_selection = select$pLI # the selection score vector
-  names(gene_selection) = gene_name # naming each score with the gene it belongs to
+  gene_selection = read_gene_features("selection")
+  gene_name = names(gene_selection)
   
-  
-  young_ages = "3m" # The ages of the young mice 
-  old_ages_1 = c("21m","24m") # The ages of the old mice
-  old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
-  
-  DF_cor_drop = c()
+
+  if(data.type == "TM.droplet")
+  {
+    young_ages = "3m" # The ages of the young mice 
+    old_ages_1 = c("21m","24m") # The ages of the old mice
+    old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
+  }  
+  if(data.type == "TM.facs")  # Set young/old ages here ! 
+  {
+    
+  }
+  DF_cor = c()
   for(i in 1:length(samples$organs)){
-    read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".drop.rds")
+    read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(read.file)
-    SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".drop.rds")) # current tissue seurat object
+    print(paste0("Read file ", i, " out of: ", length(samples$organs)))
+    SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
     young.ind = c(SC@meta.data$age %in% young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(SC@meta.data$age %in% old_ages_1) # index for cells that came from old mouses
@@ -39,7 +51,7 @@ mean_expression_droplet <- function(data.type) {
     rownames(counts.mat) = SC_gene_name 
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
-    cell_types_categories = meta.data.drop[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+    cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
     n_cell_types = max(cell_types) # Number of cell types
     earase = vector()
     
@@ -57,6 +69,7 @@ mean_expression_droplet <- function(data.type) {
     cells_ind = c(1:(n_cell_types+1))[-earase]
     if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1))
     
+    print("Start loop cell types")
     for(k in cells_ind){ # loop on cell types 
       gene_selc = gene_selection[gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
       
@@ -108,22 +121,27 @@ mean_expression_droplet <- function(data.type) {
       
       
       # data frame containing young and old mean-selection correlation for all cell-types
-      DF_cor_drop = rbind(DF_cor_drop,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],mean_selc_cor,pval_all,
+      DF_cor = rbind(DF_cor,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],mean_selc_cor,pval_all,
                                                  "selc_mean_old_cor_spearman" = old_cor_spearman,"selc_mean_young_spearman" = young_cor_spearman,
                                                  p_val_old,p_val_young,fc_cor,pval_fc))
       
     }  # end loop on cell-types in tissue
+    print("End loop cell types")
+    
   }  # end loop on tissues
   
+  print("Saving DF core!")
   # Save dataframe to file: 
-  save(mean.analysis.outfile, DF_cor_drop)
+  save(DF_cor, file=mean.analysis.outfile)
   # Save also to excel? 
-  return(DF_cor_drop)
+  return(DF_cor)
   
 } # End function mean expression droplet 
 
 
-# Perform mean expression analysis for TM facs dataset 
+
+
+# Perform mean expression analysis for TM facs dataset (should unite with the above !! )
 mean_expression_facs <- function() {
   # reading the selection score data
   select = read.delim(paste0(main.dir, "/GeneLevelData/gnomad.v2.1.1.lof_metrics.by_gene.txt"))
@@ -132,9 +150,17 @@ mean_expression_facs <- function() {
   names(gene_selection) = gene_name # naming each score with the gene he belongs to
   
   
+  facs.files = list.files(path = processed.data.dir, pattern = "facs.rds",full.names = T) # facs raw files list
+  
+  data.type = "TM.facs"
+  
   DF_cor = c()
   for(i in 1:length(facs.files)){
-    SC = readRDS(file = paste(organs[i],"rds",sep = ".")) # current tissue seurat object
+    read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
+    SC = readRDS(file = paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")) # current tissue Seurat object
+    print(read.file)
+    print(paste0("Read file ", i, " out of: ", length(facs.files)))
+    
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
     young.ind = c(SC@meta.data$age %in% c("3m")) # index for cells that came from young mouses
     

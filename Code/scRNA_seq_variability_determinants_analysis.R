@@ -7,6 +7,18 @@ library(colorRamps)
 library(ggpointdensity)
 
 
+
+# Data types
+data.types = c("TM.facs", "TM.droplet", "CR.Rat") 
+data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR")   # Names of directories 
+names(data.dirs) = data.types 
+
+processed.files.str <- c("facs", "drop", "??") # match these (then rds)
+names(processed.files.str) = data.types
+
+data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
+
+
 # Main script for analysis of single-cell gene-expression data
 user.name = "Or" #  "Almog"  # Or 
 if(user.name == "Almog")
@@ -17,20 +29,20 @@ if(user.name == "Almog")
 {
   # Directories 
   main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  data.dir = paste0(main.dir, 'Data/TabulaMuris/') # Can change so code and data may be at different locations. Also change per dataset
+  data.dir = paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
 }
 
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 
 raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
-processed.data.dir <- paste0(data.dir, '/Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
+processed.data.dir <- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
                                                        # after running scRNA_seq_preprocess.R. Format: *.rds files. 
                                                        # This directory will also contain one meta.data file for each dataset. 
 gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features (selection, length ...)
 
-analysis.results.dir <- paste0(data.dir, '/Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
-analysis.figure.dir <- paste0(analysis.results.dir, '/Figures/')  # For analysis figures   
-basics.dir <- paste0(analysis.results.dir, '/BASiCS/')  # For BASiCS output 
+analysis.results.dir <- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
+analysis.figure.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
+basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
 
 
 setwd(code.dir)
@@ -45,8 +57,6 @@ source("BASiCSAnalysis.R")
 source("MeanFigures.R")
 source("OverdispersionFigures.R")
 
-# Data types
-data.types = c("TM.facs", "TM.droplet", "CR.Rat") 
 
 # Features to examine (currently, only the first two are implemented)
 feature.types = c("gene.len", "selection", "GC%", "CpG%", "TATA", "gene.age", "mRNA.half.life")
@@ -60,7 +70,6 @@ var.analysis = TRUE
 var.figures = TRUE
 
 
-data.type = "TM.droplet"
 
 if(preprocess)
 {
@@ -71,7 +80,7 @@ if(preprocess)
 if(mean.analysis)
 {
   DF_cor = mean_expression_droplet(data.type)  # Should be both droplet and facs in the same function
-  DF_cor = mean_expression_facs()  # Should be both droplet and facs in the same function
+  DF_cor = mean_expression_facs("TM.facs")  # Should be both droplet and facs in the same function
 }
   
 if(var.analysis)
@@ -82,7 +91,7 @@ if(var.analysis)
 # Plot figures: 
 if(mean.figures)
 {
-  DF_cor = draw_mean_figures(data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
+  draw_mean_figures(DF_cor, 1) # data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 }
 
 if(mean.figures)

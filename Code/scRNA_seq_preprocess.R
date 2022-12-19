@@ -7,8 +7,8 @@ library(rhdf5)
 
 get_meta_data <- function(data.type, force.rerun = FALSE)
 {
-  meta.data.file <- paste0(processed.data.dir, 'meta.data.', data.type, '.RData')
-  if(file.exists(meta.data.file) & force.rerun == FALSE) {
+  meta.data.file <- paste0(processed.data.dir, 'meta.data.', processed.files.str[data.type], '.RData')
+  if(file.exists(meta.data.file) & (force.rerun == FALSE)) {
        load(meta.data.file)
        return(meta.data)
   }

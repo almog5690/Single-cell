@@ -8,12 +8,12 @@ source("scRNA_seq_utilities.R")
 
 # Add saving figures to file in code!!! (use ggsave !!! )
 
-draw_mean_figures <- function(DF_core, fig.num) {
+draw_mean_figures <- function(DF_cor, fig.num) {
   if(fig.num == 1)  #### Figure 1
   {
     ## facs
     # adding cell type variable
-    DF_cor$CT = interaction(DF_cor$Organs,DF_cor$Cell_type,sep = ":")
+    DF_cor$CT = interaction(DF_cor$Organs, DF_cor$Cell_type,sep = ":")
     
     p_selc_mean_bar = ggplot(DF_cor,aes(y = reorder(CT,mean_selc_cor),x = mean_selc_cor,fill = -log10(pval_all))) + 
       geom_bar(stat = "identity") + 
