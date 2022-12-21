@@ -41,11 +41,19 @@ processed.data.dir <- paste0(data.dir, 'Processed/')  # For processed scRNA-seq 
 gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features (selection, length ...)
 
 analysis.results.dir <- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
-analysis.figure.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
+analysis.figures.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
 basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
 
 
 setwd(code.dir)
+
+
+# Set analysis types we want to do: 
+y.test <- c("mge", "od", "od", "od", "Delta.mge", "Delta.od", "Delta.od") # The dependent variable 
+x.test <- C(NULL, NULL, NULL, "mge", "mge", "mge", "mge") # The covariates 
+old.yound.delta <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) # Test also difference between young and old? 
+cor.test <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)  # Compute also correlation coefficient?
+
 
 
 # Include all needed source files 
@@ -79,19 +87,19 @@ if(preprocess)
 
 if(mean.analysis)
 {
-  DF_cor = mean_expression_droplet(data.type)  # Should be both droplet and facs in the same function
-  DF_cor = mean_expression_facs("TM.facs")  # Should be both droplet and facs in the same function
+  DF_cor.drop = mean_expression_analysis("TM.droplet")  # Should be both droplet and facs in the same function
+  DF_cor.facs = mean_expression_analysis("TM.facs")  # Should be both droplet and facs in the same function
 }
   
 if(var.analysis)
 {
-  DF_cor = var.analysis(data.type)
+  DF_cor = var_analysis(data.type)
 }
 
 # Plot figures: 
 if(mean.figures)
 {
-  draw_mean_figures(DF_cor, 1) # data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
+  draw_mean_figures(c("TM.facs", "TM.droplet"), 1) # data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 }
 
 if(mean.figures)
