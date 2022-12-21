@@ -16,25 +16,31 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
     if(file.exists(disp.analysis.outfile) & (force.rerun==FALSE))
     {
       load(disp.analysis.outfile)
-      return(DF_cor)
+      return(DF_OD_res)
     }
   }
   
   
-  if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
-  {
-    load(disp.selc.analysis.outfile)
-    return(DF_cor)
-  }
+  
   
   if(attribute == "selection")
   {
+    if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
+    {
+      load(disp.selc.analysis.outfile)
+      return(DF_OD_res)
+    }
   # reading the selection score data
   gene_att = read_gene_features("selection")
   gene_name = names(gene_att)
   } 
   if(attribute == "gene.len")
   {
+    if(file.exists(disp.len.analysis.outfile) & (force.rerun==FALSE))
+    {
+      load(disp.len.analysis.outfile)
+      return(DF_OD_res)
+    }
     # reading the transcript length data
     gene_att = read_gene_features("gene.len")
     gene_name = names(gene_att)
@@ -195,6 +201,21 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
       
     }
   }  # End loop on tissues 
+  if(attribute == "OD"){
+    print("Saving over-dispersion analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.analysis.outfile)
+  }
+  if(attribute == "selection"){
+    print("Saving over-dispersion - selection analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.selc.analysis.outfile)
+  }
+  if(attribute == "gene.len"){
+    print("Saving over-dispersion - length analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.len.analysis.outfile)
+  }
   return(DF_OD_res)
 } # End overdispersion_droplet function 
 
@@ -214,25 +235,31 @@ overdispersion_facs <- function(data.type, force.rerun = FALSE,attribute = "sele
     if(file.exists(disp.analysis.outfile) & (force.rerun==FALSE))
     {
       load(disp.analysis.outfile)
-      return(DF_cor)
+      return(DF_OD_res)
     }
   }
   
   
-  if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
-  {
-    load(disp.selc.analysis.outfile)
-    return(DF_cor)
-  }
+  
   
   if(attribute == "selection")
   {
+    if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
+    {
+      load(disp.selc.analysis.outfile)
+      return(DF_OD_res)
+    }
     # reading the selection score data
     gene_att = read_gene_features("selection")
     gene_name = names(gene_att)
   } 
   if(attribute == "gene.len")
   {
+    if(file.exists(disp.len.analysis.outfile) & (force.rerun==FALSE))
+    {
+      load(disp.len.analysis.outfile)
+      return(DF_OD_res)
+    }
     # reading the transcript length data
     gene_att = read_gene_features("gene.len")
     gene_name = names(gene_att)
@@ -388,6 +415,23 @@ overdispersion_facs <- function(data.type, force.rerun = FALSE,attribute = "sele
       }      
     }
   } # end loop on tissues 
+  
+  if(attribute == "OD"){
+    print("Saving over-dispersion analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.analysis.outfile)
+  }
+  if(attribute == "selection"){
+    print("Saving over-dispersion - selection analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.selc.analysis.outfile)
+  }
+  if(attribute == "gene.len"){
+    print("Saving over-dispersion - length analysis results!")
+    # Save dataframe to file: 
+    save(DF_cor_res, file=disp.len.analysis.outfile)
+  }
+  
   return(DF_OD_res)
 } # end overdispersion_facs function
 
