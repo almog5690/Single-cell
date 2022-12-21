@@ -22,9 +22,8 @@ get_tissue_file_names <- function(data.type)
   {
     load(paste0(processed.data.dir, "/meta.data.facs.RData"))
     file.patt <- "facs"
-    file.names = list.files(path = processed.data.dir, pattern = "*.rds") # facs processed files list
-    file.names = file.names[!(file.names %in% list.files(path = processed.data.dir, pattern = "drop.rds"))]
-    organs  = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1])) #facs organs names
+    file.names = list.files(path = processed.data.dir, pattern = "*facs.rds") # facs processed files list
+    organs  = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1])) # facs organs names
 #    organs[5] = "Brain_Non-Myeloid" # why needed?
   }
     
