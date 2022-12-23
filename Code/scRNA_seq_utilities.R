@@ -31,7 +31,7 @@ get_tissue_file_names <- function(data.type)
   {
   }
   
-  return(list(file.names = files.names, organs = organs))
+  return(list(file.names = file.names, organs = organs))
 }
 
 

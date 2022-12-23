@@ -3,7 +3,6 @@ library(Seurat)
 
 
 
-
 # Perform mean expression analysis for TM droplet dataset 
 mean_expression_analysis <- function(data.type, feature.type = "selection", covariates = NULL, force.rerun = FALSE) {
   mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
@@ -15,7 +14,6 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
   min.count <- 10 
   min.cells.total <- 100
   min.cells.per.age <- 20
-  
   
   if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
   {
@@ -55,12 +53,12 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
     if((data.type == "TM.droplet") & (i==6)){ # special tissue for droplet (which?). Should move this line
       old.ind = SC@meta.data$age %in% c("18m","21m")
     }
-    all.ind = rep(TRUE, n_cell)
     
     n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
     SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
     rownames(counts.mat) = SC_gene_name 
+    all.ind = rep(TRUE, n_cell)
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
@@ -86,6 +84,8 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
     for(k in cells_ind){ # loop on cell types 
 #      cur_gene_features = gene_features[gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
 
+
+      # 1. Pearson correlations for all, young, old
       gene_mean = rowMeans(cur_counts.mat[,cell_types==k-1])
       for(age.group in c("all", "young", "old"))
       {
@@ -93,9 +93,16 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
                           "all" = all.ind, 
                           "young" = young.ind, 
                           "old" = old.ind)
+        
+        # Filtering genes with low expression for old/young (less than 10 counts)
+        cur.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!cur.ind)]) > min.count # Filter 
+        names(cur.gene.ind) = toupper(names(cur.gene.ind))
+        cur.gene.ind = cur.gene.ind[cur_gene_name]
+        cur.gene.mean <- gene_mean[cur.ind]
+        cur.gene.mean <- cur.gene.mean[cur.gene.ind]
         # genes mean vectors: all, young, old
         list2env(setNames(cor.test(gene_mean[cur.ind], cur_gene_features[cur.ind], use = "complete.obs", method = "spearman")[3:4], 
-                          c(paste0("pval_", age.group), paste0("mean_", feature.type, "_cor_", age.group))), envir = .GlobalEnv)
+                          c(paste0("mean_", feature.type, "_", age.group, "_cor"), paste0("mean_", feature.type, "_", age.group, "_pval"))), envir = .GlobalEnv)
       }
       
       # genes mean vectors: all, young, old
@@ -103,13 +110,11 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
 #      gene_mean_young = rowMeans(cur_counts.mat[,(cell_types==k-1)&(young.ind)])
 #      gene_mean_old = rowMeans(cur_counts.mat[,(cell_types==k-1)&(old.ind)])
       
-
       # Mean expression and selection correlation (old and young together)
 #      list2env(setNames(cor.test(gene_mean, cur_gene_features, use = "complete.obs", method = "spearman")[3:4], 
 #               c("pval_all", "mean_selc_cor")), envir = .GlobalEnv)
       
-      
-      
+      # 2. Fold-change       
       # Filtering genes with low expression for old (less than 10 counts)
       genes_ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count
       names(genes_ind) = toupper(names(genes_ind))
@@ -124,7 +129,8 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
       mean_old = gene_mean_old[genes_ind_young] # filtered young mean expression vector
       
       # Mean expression fold-change and selection correlation
-      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_ind_young],use = "complete.obs",method = "spearman")[3:4], 
+      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_ind_young], 
+                                 use = "complete.obs", method = "spearman")[3:4], 
                         c("pval_fc", "fc_cor")), envir = .GlobalEnv)
       
 

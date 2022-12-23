@@ -50,7 +50,7 @@ setwd(code.dir)
 
 # Set analysis types we want to do: 
 y.test <- c("mge", "od", "od", "od", "Delta.mge", "Delta.od", "Delta.od") # The dependent variable 
-x.test <- C(NULL, NULL, NULL, "mge", "mge", "mge", "mge") # The covariates 
+x.test <- c("", "", "", "mge", "mge", "mge", "mge") # The covariates 
 old.yound.delta <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) # Test also difference between young and old? 
 cor.test <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)  # Compute also correlation coefficient?
 
@@ -76,7 +76,6 @@ mean.analysis = TRUE
 mean.figures = TRUE
 var.analysis = TRUE
 var.figures = TRUE
-
 
 
 if(preprocess)
