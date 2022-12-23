@@ -120,11 +120,13 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
       names(genes_ind) = toupper(names(genes_ind))
       genes_ind_young = genes_ind[cur_gene_name]
       
-      mean_young = gene_mean_young[genes_ind_young] # filtered young mean expression vector
-      mean_old = gene_mean_old[genes_ind_young] # filtered young mean expression vector
+      genes_fc_ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count & rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count
+      
+      mean_young = gene_mean_young[genes_fc_ind] # filtered young mean expression vector
+      mean_old = gene_mean_old[genes_fc_ind] # filtered young mean expression vector
       
       # Mean expression fold-change and selection correlation
-      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_ind_young],use = "complete.obs",method = "spearman")[3:4], 
+      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_fc_ind],use = "complete.obs",method = "spearman")[3:4], 
                         c("pval_fc", "fc_cor")), envir = .GlobalEnv)
       
 
