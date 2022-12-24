@@ -37,6 +37,12 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
     old_ages_1 = c("18m", "21m", "24m")
     old_ages_2 = c()
   }
+  if(data.type == "CR.Rat")  # Set young/old ages here ! 
+  {
+    young_ages = "Y" # The ages of the young mice 
+    old_ages_1 = "O"
+    old_ages_2 = c()
+  }
   DF_cor = c()
   for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
@@ -61,6 +67,9 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+    if(data.type == "CR.Rat"){
+      cell_types_categories = levels(SC$cell_types)
+    }
     n_cell_types = max(cell_types) # Number of cell types
     earase = vector()
     
