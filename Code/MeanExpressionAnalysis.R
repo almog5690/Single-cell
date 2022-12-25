@@ -1,19 +1,11 @@
 library(Seurat)
 
 
-
-# Perform mean expression analysis for TM droplet dataset 
-mean_expression_analysis <- function(data.type, feature.type = "selection", covariates = NULL, force.rerun = FALSE) {
+# Perform mean expression analysis for single cell RNA seq dataset
+mean_expression_analysis <- function(data.type, feature.types = c("selection"), covariates = NULL, force.rerun = FALSE) {
   mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
   samples <- get_tissue_file_names(data.type)
-  
   meta.data = get_meta_data(data.type)
-  
-  # Set parameters for filtering (may depend on the data type?): 
-  min.count <- 10 
-  min.cells.total <- 100
-  min.cells.per.age <- 20
-  
   if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
   {
     load(mean.analysis.outfile)
@@ -21,33 +13,53 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
   }
   
   # reading the selection score data
-  gene_features = read_gene_features(feature.type)
-  gene_name = names(gene_features)
+  n.features <- length(feature.types)
+  gene_features = read_gene_features(feature.types)  # Problem: we need the same number of genes !!! 
+  gene_name <- vector("list", n.features)
+  names(gene_name) <- feature.types
   
+  #  gene_name = names(gene_features)
+  groups = dataset_to_age_groups(data.type)
   
-  if(data.type == "TM.droplet")
+  # Set column names: 
+  col.names <- c("Organs", "Cell_type")
+  for(feature.type in feature.types)
   {
-    young_ages = "3m" # The ages of the young mice 
-    old_ages_1 = c("21m","24m") # The ages of the old mice
-    old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
-  }  
-  if(data.type == "TM.facs")  # Set young/old ages here ! 
+    gene_name[[feature.type]] <- names(gene_features[[feature.type]])
+    # Marginal coefficients (Spearman)    
+    for(age.group in c("all", "young", "old"))
+    {
+      col.names <- c(col.names, c(paste0(feature.type, "_", age.group, "_cor"), 
+                                  paste0(feature.type, "_", age.group, "_pval")))
+    }
+    col.names <- c(col.names, c(paste0(feature.type, "_fc_cor"), 
+                                paste0(feature.type, "_fc_pval")))
+  }    
+  beta.inds <- seq(length(col.names)+1, length(col.names)+n.features*8, 2)
+  beta.pvals.inds <- seq(length(col.names)+2, length(col.names)+n.features*8, 2)
+  for(feature.type in feature.types)     # Multiple regression coefficients     
   {
-    young_ages = "3m" # The ages of the young mice 
-    old_ages_1 = c("18m", "21m", "24m")
-    old_ages_2 = c()
+    for(age.group in c("all", "young", "old"))
+    {
+      col.names <- c(col.names, c(paste0(feature.type, "_", age.group, "_beta"), 
+                                  paste0(feature.type, "_", age.group, "_beta_pval")))
+    }
+    col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), 
+                                paste0(feature.type, "_fc_beta_pval")))
   }
-  DF_cor = c()
-  for(i in 1:length(samples$organs)){
+  
+  DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
+  cell.type.ctr <- 1
+  #  for(i in 1:length(samples$organs)){
+  for(i in 1:3){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
-    print(read.file)
-    print(paste0("Read file ", i, " out of: ", length(samples$organs)))
+    print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-    young.ind = c(SC@meta.data$age %in% young_ages) # index for cells that came from 3 month old mouses
-    old.ind = c(SC@meta.data$age %in% old_ages_1) # index for cells that came from old mouses
+    young.ind = c(SC@meta.data$age %in% groups$young_ages) # index for cells that came from 3 month old mouses
+    old.ind = c(SC@meta.data$age %in% groups$old_ages_1) # index for cells that came from old mouses
     if(sum(old.ind) == 0){ # Empty
-      old.ind = c(SC@meta.data$age %in% old_ages_2)
+      old.ind = c(SC@meta.data$age %in% groups$old_ages_2)
     }
     if((data.type == "TM.droplet") & (i==6)){ # special tissue for droplet (which?). Should move this line
       old.ind = SC@meta.data$age %in% c("18m","21m")
@@ -61,112 +73,113 @@ mean_expression_analysis <- function(data.type, feature.type = "selection", cova
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
-    n_cell_types = max(cell_types) # Number of cell types
-    earase = vector()
     
-    for(ct_ind in 0:n_cell_types){
-      #filtering cell types with less then 100 cells or less the 20 cells in each the age groups
-      if(sum(cell_types==ct_ind)<min.cells.total|sum(cell_types==ct_ind & young.ind)<min.cells.per.age|sum(cell_types==ct_ind & old.ind)<min.cells.per.age){
-        earase = c(earase,ct_ind+1)
-        next()
-      }
+    cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
+    
+    cur_gene_features <- vector("list", n.features)
+    cur_gene_name <- vector("list", n.features)
+    names(cur_gene_features) <- feature.types
+    names(cur_gene_name) <- feature.types
+    
+    for(feature.type in feature.types)
+    {
+      cur_gene_features[[feature.type]] = gene_features[[feature.type]][gene_name[[feature.type]] %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
+      cur_gene_name[[feature.type]] = gene_name[[feature.type]][gene_name[[feature.type]] %in% (SC_gene_name)] # the names of the filtered genes in this tissue
+      #      cur_counts.mat <- counts.mat[cur_gene_name,] # Take only relevant genes
     }
-    
-    cur_gene_features = gene_features[gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
-    cur_gene_name = gene_name[gene_name %in% (SC_gene_name)] # the names of the filtered genes
-    cur_counts.mat <- counts.mat[cur_gene_name,] # Take only relevant genes
-    
-    cells_ind = c(1:(n_cell_types+1))[-earase]
-    if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1))
-    
-    print("Start loop cell types")
-    for(k in cells_ind){ # loop on cell types 
-      #      cur_gene_features = gene_features[gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
-      
-      
-      # 1. Pearson correlations for all, young, old
-      gene_mean = rowMeans(cur_counts.mat[,cell_types==k-1])
-      for(age.group in c("all", "young", "old"))
+    for(k in cells_ind){ # loop on cell types . 
+      print(paste0("Analyze cell type: ", cell_types_categories[k]))
+      for(feature.type in feature.types)
       {
-        cur.ind = switch(age.group, 
+        # 1. Pearson correlations for all, young, old
+        gene.mean.by.age.group <- data.frame(matrix(ncol = 3, nrow = length(cur_gene_name[[feature.type]])))
+        colnames(gene.mean.by.age.group) <- c("all", "young", "old")
+        
+        for(age.group in colnames(gene.mean.by.age.group))
+        {
+          cur.ind = switch(age.group, # Indices of cells in each group
+                           "all" = all.ind, 
+                           "young" = young.ind, 
+                           "old" = old.ind)  & (cell_types==k-1) # take only cell type 
+          
+          # Filtering genes with low expression for old/young (less than 10 counts)
+          cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter. Keep indices of genes
+          names(cur.gene.ind) = toupper(names(cur.gene.ind))
+          cur.gene.ind = cur.gene.ind[cur_gene_name[[feature.type]]]
+          gene.mean.by.age.group[age.group] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+          DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), paste0(feature.type, "_", age.group, "_cor"))] <- 
+            cor.test(gene.mean.by.age.group[[age.group]][cur.gene.ind], cur_gene_features[[feature.type]][cur.gene.ind], use = "complete.obs", method = "spearman")[3:4]
+        }
+        
+        # 2. Fold-change       
+        # Filtering genes with low expression for old AND for young (less than 10 counts)
+        fc.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&young.ind]) > filter.params$min.count |
+          rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&old.ind]) > filter.params$min.count  # choose genes for fold-change. Filter on both young and old
+        names(fc.gene.ind) = toupper(names(fc.gene.ind))
+        fc.gene.ind = fc.gene.ind[cur_gene_name[[feature.type]]]
+        mean_young = gene.mean.by.age.group[["young"]][fc.gene.ind]  # filtered young mean expression vector
+        mean_old = gene.mean.by.age.group[["old"]][fc.gene.ind]  # filtered young mean expression vector
+        
+        # Mean expression fold-change and selection correlation
+        DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_pval"), paste0(feature.type, "_fc_cor"))] <- 
+          cor.test(log(mean_old/mean_young), cur_gene_features[[feature.type]][fc.gene.ind],  use = "complete.obs", method = "spearman")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
+        
+        # Set other fields      
+        DF_cor[cell.type.ctr, "Organs"] <- samples$organs[i]
+        DF_cor[cell.type.ctr, "Cell_type"] <- cell_types_categories[k]
+      } # end loop on feature type
+
+      
+      # TODO: Add multiple linear regression with all features together! (for each age group separately!)
+      reg.ctr = 1
+      all.features.gene.names <- SC_gene_name
+      for(feature.type in feature.types)
+        all.features.gene.names <- intersect(all.features.gene.names, names(gene_features[[feature.type]]))
+      n.gene.with.all.features <- length(all.features.gene.names)
+      cur_gene_features_mat <- matrix(data = 0, nrow = n.gene.with.all.features, ncol = n.features)         # Intersect with data gene names 
+      colnames(cur_gene_features_mat) <- feature.types
+      for(feature.type in feature.types)
+        cur_gene_features_mat[, feature.type] <- gene_features[[feature.type]][all.features.gene.names]
+      
+      for(age.group in colnames(gene.mean.by.age.group))
+      {
+        cur.ind = switch(age.group, # Indices of cells in each group
                          "all" = all.ind, 
                          "young" = young.ind, 
-                         "old" = old.ind)
+                         "old" = old.ind)  & (cell_types==k-1) # take only cell type 
         
         # Filtering genes with low expression for old/young (less than 10 counts)
-        cur.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!cur.ind)]) > min.count # Filter 
+        cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter. Keep indices of genes
         names(cur.gene.ind) = toupper(names(cur.gene.ind))
-        cur.gene.ind = cur.gene.ind[cur_gene_name]
-        cur.gene.mean <- gene_mean[cur.ind]
-        cur.gene.mean <- cur.gene.mean[cur.gene.ind]
-        # genes mean vectors: all, young, old
-        list2env(setNames(cor.test(gene_mean[cur.ind], cur_gene_features[cur.ind], use = "complete.obs", method = "spearman")[3:4], 
-                          c(paste0("mean_", feature.type, "_", age.group, "_cor"), paste0("mean_", feature.type, "_", age.group, "_pval"))), envir = .GlobalEnv)
+        cur.gene.ind = cur.gene.ind[cur_gene_name[[feature.type]]]
+        gene.mean.by.age.group.reg <- rowMeans(counts.mat[all.features.gene.names, cur.ind])  # Take only filtered cells
+        DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), paste0(feature.type, "_", age.group, "_cor"))] <- 
+          cor.test(gene.mean.by.age.group[[age.group]][cur.gene.ind], cur_gene_features[[feature.type]][cur.gene.ind], use = "complete.obs", method = "spearman")[3:4]
       }
       
-      # genes mean vectors: all, young, old
-      #      gene_mean = rowMeans(cur_counts.mat[,cell_types==k-1])
-      #      gene_mean_young = rowMeans(cur_counts.mat[,(cell_types==k-1)&(young.ind)])
-      #      gene_mean_old = rowMeans(cur_counts.mat[,(cell_types==k-1)&(old.ind)])
       
-      # Mean expression and selection correlation (old and young together)
-      #      list2env(setNames(cor.test(gene_mean, cur_gene_features, use = "complete.obs", method = "spearman")[3:4], 
-      #               c("pval_all", "mean_selc_cor")), envir = .GlobalEnv)
-      
-      # 2. Fold-change       
-      # Filtering genes with low expression for old (less than 10 counts)
-      genes_ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count
-      names(genes_ind) = toupper(names(genes_ind))
-      genes_ind_old = genes_ind[cur_gene_name]
-      
-      # Filtering genes with low expression for young (less than 10 counts)
-      genes_ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(young.ind)]) > min.count
-      names(genes_ind) = toupper(names(genes_ind))
-      genes_ind_young = genes_ind[cur_gene_name]
-      
-      genes_fc_ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count & rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&(!young.ind)]) > min.count
-      
-      mean_young = gene_mean_young[genes_fc_ind] # filtered young mean expression vector
-      mean_old = gene_mean_old[genes_fc_ind] # filtered young mean expression vector
-      
-      # Mean expression fold-change and selection correlation
-      #      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_ind_young], 
-      #                                 use = "complete.obs", method = "spearman")[3:4], 
-      list2env(setNames(cor.test((mean_old/mean_young), cur_gene_features[genes_fc_ind],
-                                 use = "complete.obs",method = "spearman")[3:4], 
-                        c("pval_fc", "fc_cor")), envir = .GlobalEnv)
+      for(age.group in colnames(gene.mean.by.age.group))
+      {
+        cur.ind = switch(age.group, # Indices of cells in each group
+                         "all" = all.ind, 
+                         "young" = young.ind, 
+                         "old" = old.ind)  & (cell_types==k-1) # take only cell type 
+        gene.mean.by.age.group.reg <- rowMeans(counts.mat[all.features.gene.names, cur.ind])  # Take only filtered cells
+        
+        reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = as.data.frame(cur_gene_features_mat))  # Take log of fold-change. Maybe take difference? (they're after log)
+#        beta_log_fc = reg.model$coefficients[2] 
+#        p_val_fc = summary(log_fc_lm)$coef[2,4]    
+        
+        DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get p-values (excluding intercept)
+        DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
+        reg.ctr = reg.ctr + 1
+      }
       
       
-      gene_selc_old = cur_gene_features[genes_ind_old]
-      gene_mean_old = gene_mean_old[genes_ind_old]
-      gene_selc_young = cur_gene_features[genes_ind_young]
-      gene_mean_young = gene_mean_young[genes_ind_young]
-      
-      # mean-selection Spearman correlation for both age groups
-      old_cor_spearman = cor(gene_selc_old,gene_mean_old, use = "complete.obs",method = "spearman")
-      young_cor_spearman = cor(gene_selc_young,gene_mean_young, use = "complete.obs",method = "spearman")
-      # mean-selection Spearman correlation P values for both age groups
-      p_val_old = cor.test(gene_selc_old, gene_mean_old, use = "complete.obs", method = "spearman")$p.value
-      p_val_young = cor.test(gene_selc_young, gene_mean_young, use = "complete.obs", method = "spearman")$p.value
-      
-      
-      # data frame containing young and old mean-selection correlation for all cell-types
-      DF_cor = rbind(DF_cor, data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],mean_selc_cor,pval_all,
-                                        "selc_mean_old_cor_spearman" = old_cor_spearman,"selc_mean_young_spearman" = young_cor_spearman,
-                                        p_val_old,p_val_young,fc_cor,pval_fc))
-      
+      cell.type.ctr = cell.type.ctr+1  # update counter
     }  # end loop on cell-types in tissue
-    print("End loop cell types")
-    
   }  # end loop on tissues
   
-  print("Saving DF core!")
-  # Save dataframe to file: 
-  save(DF_cor, file=mean.analysis.outfile)
-  # Save also to excel? 
+  save(DF_cor, file=mean.analysis.outfile)   # Save dataframe to file ( Save also to excel? ) 
   return(DF_cor)
-  
 } # End function mean expression droplet 
-
-
-

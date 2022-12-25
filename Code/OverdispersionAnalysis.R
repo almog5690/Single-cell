@@ -19,10 +19,7 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
       return(DF_OD_res)
     }
   }
-  
-  
-  
-  
+
   if(attribute == "selection")
   {
     if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
@@ -47,8 +44,6 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
   } 
   
   
-  
-  
   if(data.type == "TM.droplet")
   {
     young_ages = "3m" # The ages of the young mice 
@@ -61,7 +56,13 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
     old_ages_1 = c("18m","21m","24m")
   }
   
-  DF_OD_res = c()
+  DF_OD_res = data.frame(matrix(ncol = 10, nrow = 0)) # Change from manual to automatic
+  colnames(DF_OD_res) = c("Organs", "Cell_type", paste0(attribute,"_disp_old_cor_spearman"), paste0(attribute,"_disp_young_cor_spearman"), 
+                          "p_val_old" ,"p_val_young", paste0("beta", attribute,"all", sep = "_"), "pval_all", 
+                          paste0("beta", attribute,"log_fc", sep = "_"), "pval_log_fc")
+  
+
+  
   for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(read.file)
@@ -142,8 +143,8 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
         Young_sign = sum(df$ResultDiffDisp == "Young+") # Number of genes with significant higher over-dispersion for youngs
         Old_sign = sum(df$ResultDiffDisp == "Old+") # Number of genes with significant higher over-dispersion for olds
         
-        # Figure 3 data
-        DF_OD_res = rbind(DF_OD_res,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],Old_sign,Young_sign))
+        # Figure 3 data  . Problem: How to attach only length 2 data-frame?
+        DF_OD_res = rbind(DF_OD_res, data.frame("Organs" = samples$organs[i], "Cell_type" = cell_types_categories[k],Old_sign,Young_sign))
         
       } else {
       
@@ -190,12 +191,13 @@ overdispersion_droplet <- function(data.type, force.rerun = FALSE,attribute = "s
         beta_att_lm = att_disp_lm$coefficients[2]
         p_val_att_lm =  summary(att_disp_lm)$coef[2,4]
         
-        # data frame containig young and old over-dispersion-selection correlation for all cell-types
-        DF_OD_res = rbind(DF_OD_res,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],
-                                               paste0(attribute,"_disp_old_cor_spearman") = att_disp_cor_old_spearman,paste0(attribute,"_disp_young_cor_spearman") = att_disp_cor_young_spearman,
+        # data frame containing young and old over-dispersion-selection correlation for all cell-types
+        DF_OD_res = rbind(DF_OD_res, data.frame(samples$organs[i], cell_types_categories[k],
+                                              att_disp_cor_old_spearman,
+                                               att_disp_cor_young_spearman,
                                                p_val_old,p_val_young,
-                                               paste0("beta",attribute,"all",sep = "_") = beta_att_lm,"pval_all" = p_val_att_lm,
-                                               paste0("beta",attribute,"log_fc",sep = "_") = beta_log_fc,"pval_log_fc" = p_val_fc))
+                                               beta_att_lm, p_val_att_lm,
+                                               beta_log_fc, p_val_fc))
       
       }
       
@@ -283,7 +285,12 @@ overdispersion_facs <- function(data.type, force.rerun = FALSE,attribute = "sele
   
   
   # Over dispersion differential variability test
-  DF_OD_res = c()
+  DF_OD_res = data.frame(matrix(ncol = 10, nrow = 0)) # Change from manual to automatic
+  colnames(DF_OD_res) = c("Organs", "Cell_type", paste0(attribute,"_disp_old_cor_spearman"), paste0(attribute,"_disp_young_cor_spearman"), 
+                          "p_val_old" ,"p_val_young", paste0("beta", attribute,"all", sep = "_"), "pval_all", 
+                          paste0("beta", attribute,"log_fc", sep = "_"), "pval_log_fc")
+  
+
   for(i in 1:length(organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(read.file)
@@ -405,12 +412,14 @@ overdispersion_facs <- function(data.type, force.rerun = FALSE,attribute = "sele
         beta_att_lm = att_disp_lm$coefficients[2]
         p_val_att_lm =  summary(att_disp_lm)$coef[2,4]
         
-        # data frame containig young and old over-dispersion-selection correlation for all cell-types
-        DF_OD_res = rbind(DF_OD_res,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],
-                                               paste0(attribute,"_disp_old_cor_spearman") = att_disp_cor_old_spearman,paste0(attribute,"_disp_young_cor_spearman") = att_disp_cor_young_spearman,
-                                               p_val_old,p_val_young,
-                                               paste0("beta",attribute,"all",sep = "_") = beta_att_lm,"pval_all" = p_val_att_lm,
-                                               paste0("beta",attribute,"log_fc",sep = "_") = beta_log_fc,"pval_log_fc" = p_val_fc))
+        # data frame containing young and old over-dispersion-selection correlation for all cell-types
+        # data frame containing young and old over-dispersion-selection correlation for all cell-types
+        DF_OD_res = rbind(DF_OD_res, data.frame(samples$organs[i], cell_types_categories[k],
+                                                att_disp_cor_old_spearman,
+                                                att_disp_cor_young_spearman,
+                                                p_val_old,p_val_young,
+                                                beta_att_lm, p_val_att_lm,
+                                                beta_log_fc, p_val_fc))
         
       }      
     }
@@ -499,7 +508,11 @@ overdispersion_rats <- function(data.type, force.rerun = FALSE,attribute = "sele
   
   
   # Over dispersion differential variability test
-  DF_OD_res = c()
+  DF_OD_res = data.frame(matrix(ncol = 10, nrow = 0)) # Change from manual to automatic
+  colnames(DF_OD_res) = c("Organs", "Cell_type", paste0(attribute,"_disp_old_cor_spearman"), paste0(attribute,"_disp_young_cor_spearman"), 
+                          "p_val_old" ,"p_val_young", paste0("beta", attribute,"all", sep = "_"), "pval_all", 
+                          paste0("beta", attribute,"log_fc", sep = "_"), "pval_log_fc")
+  
   for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(read.file)
@@ -623,11 +636,12 @@ overdispersion_rats <- function(data.type, force.rerun = FALSE,attribute = "sele
         p_val_att_lm =  summary(att_disp_lm)$coef[2,4]
         
         # data frame containig young and old over-dispersion-selection correlation for all cell-types
-        DF_OD_res = rbind(DF_OD_res,data.frame("Organs" = samples$organs[i],"Cell_type" = cell_types_categories[k],
-                                               paste0(attribute,"_disp_old_cor_spearman") = att_disp_cor_old_spearman,paste0(attribute,"_disp_young_cor_spearman") = att_disp_cor_young_spearman,
-                                               p_val_old,p_val_young,
-                                               paste0("beta",attribute,"all",sep = "_") = beta_att_lm,"pval_all" = p_val_att_lm,
-                                               paste0("beta",attribute,"log_fc",sep = "_") = beta_log_fc,"pval_log_fc" = p_val_fc))
+        DF_OD_res = rbind(DF_OD_res, data.frame(samples$organs[i], cell_types_categories[k],
+                                                att_disp_cor_old_spearman,
+                                                att_disp_cor_young_spearman,
+                                                p_val_old,p_val_young,
+                                                beta_att_lm, p_val_att_lm,
+                                                beta_log_fc, p_val_fc))
         
       }      
     }

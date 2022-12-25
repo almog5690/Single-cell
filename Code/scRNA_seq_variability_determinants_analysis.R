@@ -55,6 +55,14 @@ old.yound.delta <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) # Test also d
 cor.test <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)  # Compute also correlation coefficient?
 
 
+# Set filtering parameters for filtering (may depend on the data type?): 
+filter.params = c()
+filter.params$min.count <- 10 
+filter.params$min.cells.total <- 100
+filter.params$min.cells.per.age <- 20
+
+
+
 
 # Include all needed source files 
 source("scRNA_seq_utilities.R")
@@ -86,7 +94,7 @@ if(preprocess)
 
 if(mean.analysis)
 {
-  DF_cor.drop = mean_expression_analysis("TM.droplet")  # Should be both droplet and facs in the same function
+  DF_cor.drop = mean_expression_analysis("TM.droplet", force.rerun = TRUE)  # Should be both droplet and facs in the same function
   DF_cor.facs = mean_expression_analysis("TM.facs")  # Should be both droplet and facs in the same function
 }
   
