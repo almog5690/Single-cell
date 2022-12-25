@@ -2,7 +2,7 @@ library(Seurat)
 library(rhdf5)
 library(BASiCS)
 
-BASics_droplet <- function()
+BASics_droplet <- function(data.type)
 {
   for(i in 1:length(drop_organs)){
     SC = readRDS(file = paste(drop_organs[i],"drop","rds",sep = ".")) # Reading seurat object
@@ -45,12 +45,12 @@ BASics_droplet <- function()
         young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_ind & young.ind],BatchInfo = batch[cell_types == ct_ind & young.ind]) 
         
         # Creating BASiCS chain for old and young mice
-        chain_old = BASiCS_MCMC(Data = old_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
-                                WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
-                                RunName = paste(drop_organs[i],cell_types_categories[ct_ind+1],"old")) 
-        chain_young = BASiCS_MCMC(Data = young_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
-                                  WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
-                                  RunName = paste(drop_organs[i],cell_types_categories[ct_ind+1],"young"))  
+        chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                                WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = paste0(basics.dir,"/chains"),
+                                RunName = paste(samples$organs[i],cell_types_categories[k],"21-24m","drop")) 
+        chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                                  WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = paste0(basics.dir,"/chains"),
+                                  RunName = paste(samples$organs[i],cell_types_categories[k],"3m","drop"))  
         
         # Differential over-dispersion test - only on genes without significant difference in mean expression
         test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
@@ -58,7 +58,7 @@ BASics_droplet <- function()
                              EpsilonM = 0, EpsilonD = log2(1.5),
                              EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10) 
         
-        save(test,file = paste("/tmp/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData")) 
+        save(test,file = paste0(basics.dir,paste("/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData"))) 
         
       }
     }
@@ -105,11 +105,11 @@ BASiCS_facs <- function()
         young_bs = newBASiCS_Data(Counts = counts.mat[good_genes,cell_types == ct_ind & young.ind],BatchInfo = batch[cell_types == ct_ind & young.ind]) 
         
         # BASiCS chain for old and young mice
-        chain_old = BASiCS_MCMC(Data = old_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
-                                WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
+        chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                                WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir =  paste0(basics.dir,"/chains"),
                                 RunName = paste(organs[i],cell_types_categories[ct_ind+1],"old")) 
-        chain_young = BASiCS_MCMC(Data = young_bs,N = 5000,Thin = 5,Burn = 2500,Regression = T,
-                                  WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = "/tmp/chains",
+        chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                                  WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir =  paste0(basics.dir,"/chains"),
                                   RunName = paste(organs[i],cell_types_categories[ct_ind+1],"young"))  
         
         # Differential over-dispersion test - only on genes without significant difference in mean expression
@@ -118,7 +118,7 @@ BASiCS_facs <- function()
                              EpsilonM = 0, EpsilonD = log2(1.5),
                              EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10) 
         
-        save(test,file = paste("/tmp/DVT/DVT",organs[i],cell_types_categories[ct_ind + 1],"same-mean.RData"))
+        save(test,file = paste0(basics.dir,paste("/DVT/DVT",organs[i],cell_types_categories[ct_ind + 1],"same-mean.RData")))
         
       }
     }
@@ -127,3 +127,51 @@ BASiCS_facs <- function()
 } # end function BASiCS_facs
 
 
+BASiCS_rats <- function()
+{
+  data.type = "CR.Rat"
+  samples <- get_tissue_file_names(data.type)
+  for(j in 1:length(samples$organs)){
+    SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
+    
+    counts.mat = as.matrix(SC@assays$RNA@counts)
+    young.ind = (SC$age == "Y")
+    old.ind = (SC$age == "O")
+    cell_types = as.numeric(SC$cell_types)
+    n_cell_types = max(cell_types)+1
+    n_genes = SC@assays$RNA@counts@Dim[1]
+    cell_types_categories = levels(SC$cell_types)
+    
+    for(ct_ind in 0:n_cell_types){  
+      if(sum((cell_types == ct_ind) & young.ind) < 20 | sum((cell_types == ct_ind) & old.ind) < 20 | sum((cell_types == ct_ind)) < 100){
+        next()
+      }
+      
+      old_sum = rowSums(counts.mat[,(cell_types==ct_ind & old.ind)])
+      young_sum = rowSums(counts.mat[,(cell_types==ct_ind & young.ind)])
+      good_genes = which(old_sum > 10 & young_sum > 10)
+      
+      batch = SC$orig.ident # using mouse id as batch
+      
+      old_bs = newBASiCS_Data(Counts = counts.mat[good_genes,cell_types == ct_ind & old.ind],BatchInfo = batch[cell_types == ct_ind & old.ind])
+      young_bs = newBASiCS_Data(Counts = counts.mat[good_genes,cell_types == ct_ind & young.ind],BatchInfo = batch[cell_types == ct_ind & young.ind])
+      chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                              WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE,  StoreDir = paste0(basics.dir,"/chains"),
+                              RunName = paste(rats_organs[j],cell_types_categories[ct_ind+1],"rats","old"))
+      chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
+                                WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = paste0(basics.dir,"/chains"),
+                                RunName = paste(rats_organs[j],cell_types_categories[ct_ind+1],"rats","young"))
+      
+
+      test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",GroupLabel2 = "Young",
+                           OffSet = T,Plot = T,EpsilonR = log2(1.5)/log2(exp(1)),
+                           EFDR_M = 0.10, EFDR_D = 0.10)
+      save(test,file = paste0(basics.dir,paste("/DVT/DVT",rats_organs[j],cell_types_categories[ct_ind + 1],"rats",".RData")))
+      
+      
+      
+    }
+    
+  }
+  
+}

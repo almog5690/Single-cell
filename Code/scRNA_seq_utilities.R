@@ -29,6 +29,8 @@ get_tissue_file_names <- function(data.type)
     
   if(data.type == "CR.Rat")  # to fill 
   {
+    organs = c("Aorta","BAT","BM","Brain","Muscle","Skin","WAT","Kidney","Liver")
+    file.names = paste(organs,"rds",sep = ".")
   }
   
   return(list(file.names = file.names, organs = organs))

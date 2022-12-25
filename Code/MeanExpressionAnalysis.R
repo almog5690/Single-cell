@@ -47,11 +47,11 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), 
                                 paste0(feature.type, "_fc_beta_pval")))
   }
-  
+
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
-  #  for(i in 1:length(samples$organs)){
-  for(i in 1:3){
+#  for(i in 1:3){
+  for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
@@ -73,7 +73,11 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
-    
+    if(data.type == "CR.Rat"){ # Convert to dummy variables 
+      cell_types_categories = levels(SC$cell_types)
+    }
+
+
     cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
     
     cur_gene_features <- vector("list", n.features)

@@ -23,8 +23,8 @@ data.type = "TM.droplet"  # Choose one type for analysis (can later loop over mu
 user.name = "Or" #  "Almog"  # Or 
 if(user.name == "Almog")
 {
-  main.dir = "C:/???/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  data.dir = "???"  # Change to directory with all the data
+  main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+  data.dir = "C:/Users/almog/Singel cell"  # Change to directory with all the data
 } else # Or 
 {
   # Directories 
