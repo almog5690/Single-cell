@@ -81,7 +81,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
     
     cur_gene_features <- vector("list", n.features)
-    cur_gene_name <- vector("list", n.features)
+    cur_gene_name <- vector("list", n.features)  # genes that both have the feature and are present in the sc-RNA-seq data of the tissue
     names(cur_gene_features) <- feature.types
     names(cur_gene_name) <- feature.types
     
@@ -105,9 +105,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
                            "all" = all.ind, 
                            "young" = young.ind, 
                            "old" = old.ind)  & (cell_types==k-1) # take only cell type 
-          
-          # Filtering genes with low expression for old/young (less than 10 counts)
-          cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter. Keep indices of genes
+          cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
           names(cur.gene.ind) = toupper(names(cur.gene.ind))
           cur.gene.ind = cur.gene.ind[cur_gene_name[[feature.type]]]
           gene.mean.by.age.group[age.group] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
@@ -136,7 +134,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       
       # TODO: Add multiple linear regression with all features together! (for each age group separately!)
       reg.ctr = 1
-      all.features.gene.names <- SC_gene_name
+      all.features.gene.names <- SC_gene_name  # genes that both appear in the tissue, and have ALL features 
       for(feature.type in feature.types)
         all.features.gene.names <- intersect(all.features.gene.names, names(gene_features[[feature.type]]))
       n.gene.with.all.features <- length(all.features.gene.names)
@@ -144,6 +142,8 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       colnames(cur_gene_features_mat) <- feature.types
       for(feature.type in feature.types)
         cur_gene_features_mat[, feature.type] <- gene_features[[feature.type]][all.features.gene.names]
+      cur_gene_features_mat <- as.data.frame(cur_gene_features_mat)
+      row.names(cur_gene_features_mat) <- all.features.gene.names
       
       for(age.group in colnames(gene.mean.by.age.group))
       {
@@ -151,26 +151,14 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
                          "all" = all.ind, 
                          "young" = young.ind, 
                          "old" = old.ind)  & (cell_types==k-1) # take only cell type 
-        
-        # Filtering genes with low expression for old/young (less than 10 counts)
-        cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter. Keep indices of genes
+        cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
         names(cur.gene.ind) = toupper(names(cur.gene.ind))
-        cur.gene.ind = cur.gene.ind[cur_gene_name[[feature.type]]]
-        gene.mean.by.age.group.reg <- rowMeans(counts.mat[all.features.gene.names, cur.ind])  # Take only filtered cells
-        DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), paste0(feature.type, "_", age.group, "_cor"))] <- 
-          cor.test(gene.mean.by.age.group[[age.group]][cur.gene.ind], cur_gene_features[[feature.type]][cur.gene.ind], use = "complete.obs", method = "spearman")[3:4]
-      }
-      
-      
-      for(age.group in colnames(gene.mean.by.age.group))
-      {
-        cur.ind = switch(age.group, # Indices of cells in each group
-                         "all" = all.ind, 
-                         "young" = young.ind, 
-                         "old" = old.ind)  & (cell_types==k-1) # take only cell type 
-        gene.mean.by.age.group.reg <- rowMeans(counts.mat[all.features.gene.names, cur.ind])  # Take only filtered cells
+        no.features.gene.names = setdiff(names(cur.gene.ind), all.features.gene.names)        
+        cur.gene.ind[no.features.gene.names] = FALSE # take only genes with features 
         
-        reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = as.data.frame(cur_gene_features_mat))  # Take log of fold-change. Maybe take difference? (they're after log)
+        gene.mean.by.age.group.reg <- rowMeans(counts.mat[cur.gene.ind, cur.ind])  # Take only filtered cells
+        
+        reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = cur_gene_features_mat[cur.gene.ind,])  # Take log of fold-change. Maybe take difference? (they're after log)
 #        beta_log_fc = reg.model$coefficients[2] 
 #        p_val_fc = summary(log_fc_lm)$coef[2,4]    
         
@@ -179,6 +167,19 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         reg.ctr = reg.ctr + 1
       }
       
+      # Do regression for fold-change 
+      fc.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&young.ind]) > filter.params$min.count &  # require both !! 
+        rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&old.ind]) > filter.params$min.count  # choose genes for fold-change. Filter on both young and old
+      names(fc.gene.ind) = toupper(names(fc.gene.ind))
+      no.features.gene.names = setdiff(names(fc.gene.ind), all.features.gene.names)        
+      fc.gene.ind[no.features.gene.names] = FALSE # take only genes with features 
+      mean_young = rowMeans(counts.mat[fc.gene.ind, young.ind])   # filtered young mean expression vector
+      mean_old = rowMeans(counts.mat[fc.gene.ind, old.ind])   # filtered young mean expression vector
+      
+      fc.reg.model <- lm(log(mean_old / mean_young) ~ ., data = cur_gene_features_mat[fc.gene.ind,])  # Take log of fold-change. Maybe take difference? (they're after log)
+      DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
+      DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
+      reg.ctr = reg.ctr + 1
       
       cell.type.ctr = cell.type.ctr+1  # update counter
     }  # end loop on cell-types in tissue
