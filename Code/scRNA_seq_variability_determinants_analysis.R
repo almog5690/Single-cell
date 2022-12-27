@@ -77,14 +77,12 @@ source("OverdispersionFigures.R")
 # Features to examine (currently, only the first two are implemented)
 feature.types = c("gene.len", "selection", "GC%", "CpG%", "TATA", "gene.age", "mRNA.half.life")
 
-
 # What analysis to do: 
 preprocess = FALSE
 mean.analysis = TRUE
 mean.figures = TRUE
 var.analysis = TRUE
 var.figures = TRUE
-
 
 if(preprocess)
 {
