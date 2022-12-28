@@ -12,8 +12,12 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
   n.datas <- length(data.types)
   DF_cors <- vector("list", n.datas)
   p_selc_mean_bar <- vector("list", n.datas)
-  for (i in 1:n.datas) {
-    DF_cors[[i]] <- mean_expression_analysis(data.types[i])
+  for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
+    mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.types[i], '.RData') 
+#                                    paste0( feature.types, collapse="_"), '.RData') # should include also features 
+    load(mean.analysis.outfile)
+    DF_cors[[i]] <- DF_cor     
+#    DF_cors[[i]] <- mean_expression_analysis(data.types[i])
   }
   
   if(fig.num == 1)  #### Figure 1
@@ -22,7 +26,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
     # adding cell type variable
     for (i in 1:n.datas) {
       DF_cors[[i]]$CT = interaction(DF_cors[[i]]$Organs, DF_cors[[i]]$Cell_type,sep = ":")
-      
+      # Joint multiple plots !!! 
       p_selc_mean_bar[[i]] = ggplot(DF_cors[[i]],aes(y = reorder(CT,mean_selc_cor),x = mean_selc_cor, fill = -log10(pval_all))) + 
         geom_bar(stat = "identity") + 
         theme_classic() +
@@ -31,6 +35,9 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
         theme(axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size = 10),
               plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) 
     }
+    
+    
+    
     ## droplet
     # adding cell type variable
     ##    DF_cors[[2]]$CT = interaction(DF_cors[[2]]$Organs,DF_cors[[2]]$Cell_type,sep = ":")
@@ -46,11 +53,16 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
     
     # merging facs and droplet plots into figure 1
     #    print(p_selc_mean_bar)
-    title = ggdraw() + draw_label("Mean vs selection correlation across all cell types") # plot title
-    p = plot_grid(p_selc_mean_bar, p_selc_mean_bar_drop, labels = LETTERS[1:2])
+    multi.plot <- ggarrange(plotlist = p_selc_mean_bar,nrow = 1,ncol = 2)
+    
+    annotate_figure(multi.plot, top = text_grob("Mean vs selection correlation across all cell types", 
+                                          color = "black", face = "bold", size = 14))
+    
+#    title = ggdraw() + draw_label("Mean vs selection correlation across all cell types") # plot title
+#    p = plot_grid(p_selc_mean_bar, p_selc_mean_bar_drop, labels = LETTERS[1:2])
     #    p = plot_grid(p_selc_mean_bar[[1]], p_selc_mean_bar_drop[[2]], labels = LETTERS[1:2])
-    plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
-    ggsave(paste(analysis.figure.dir,"mean vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
+#    plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+    ggsave(paste0(analysis.figures.dir,"mean vs selection correlation across all cell types.png"),height = 6,width = 9)
     
   }  
   
@@ -225,7 +237,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
     title = ggdraw() + draw_label("Genes selection and mean correlation") # plot title
     p = plot_grid(p_denst,p3,p_denst_drop,p3_drop,labels = LETTERS[1:4]) 
     plot_grid(title,p,ncol=1, rel_heights=c(0.1, 1))
-    ggsave(paste(analysis.figure.dir,"selection and mean corr gene-filter density and cor plot.png",sep = "/"),height = 6,width = 9)
+    ggsave(paste(analysis.figures.dir,"selection and mean corr gene-filter density and cor plot.png",sep = "/"),height = 6,width = 9)
     
   }
   
@@ -261,6 +273,6 @@ draw_mean_figures <- function(data.types, fig.num, tissue = NULL, cell_type = NU
   } 
   
   ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.png'), height = 6,width = 9)  # Modify name 
-  #    ggsave(paste(analysis.figure.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
+  #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
   
 }

@@ -24,9 +24,9 @@ get_tissue_file_names <- function(data.type)
     file.patt <- "facs"
     file.names = list.files(path = processed.data.dir, pattern = "*facs.rds") # facs processed files list
     organs  = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1])) # facs organs names
-#    organs[5] = "Brain_Non-Myeloid" # why needed?
+    #    organs[5] = "Brain_Non-Myeloid" # why needed?
   }
-    
+  
   if(data.type == "CR.Rat")  # to fill 
   {
     organs = c("Aorta","BAT","BM","Brain","Muscle","Skin","WAT","Kidney","Liver")
@@ -125,20 +125,42 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
     young_ages = "3m" # The ages of the young mice 
     old_ages_1 = c("21m","24m") # The ages of the old mice
     old_ages_2 = c("18m","24m") # secondary old mice age in case no mice in previous "old_ages"
+    test_str = "drop 3-24 same-mean"
+    young_str = "3m"
+    old_str = "21-24m"
   }  
   if(data.type == "TM.facs") 
   {
     young_ages = "3m" # The ages of the young mice 
     old_ages_1 = c("18m", "21m", "24m")
+    test_str = "same-mean"
+    young_str = "young"
+    old_str = "old"
   }
   if(data.type == "CR.Rat")   
   {
     young_ages = "Y" # The ages of the young mice 
     old_ages_1 = "O"
+    test_str = "rats"
+    young_str = "young"
+    old_str = "old"
   }
-  
-  return(list(young_ages = young_ages, old_ages_1 = old_ages_1, old_ages_2 = old_ages_2))
+  return(list(young_ages = young_ages, old_ages_1 = old_ages_1, old_ages_2 = old_ages_2, 
+              test_str = test_str, young_str = young_str, old_str = old_str))
 }
 
+
+# Getting file names for reading BASiCS results 
+dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
+{
+  groups = dataset_to_age_groups(data.type)
+  # Read cell type categories 
+  tissue.cell.type <- paste(tissue,cell_type)
+  test_file = paste0(basics.dir, paste("DVT/DVT", tissue.cell.type, data.type, groups$test_str, ".RData"))   # Differential over-dispersion test results file
+  old_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$old_str), ".Rds")     # Old Markov chain file name
+  young_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$young_str), ".Rds")     # Young Markov chain file name
+
+  return(list(test=test_file, old=old_file, young=young_file))
+}
 
 

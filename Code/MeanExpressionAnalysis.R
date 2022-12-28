@@ -2,8 +2,9 @@ library(Seurat)
 
 
 # Perform mean expression analysis for single cell RNA seq dataset
-mean_expression_analysis <- function(data.type, feature.types = c("selection"), covariates = NULL, force.rerun = FALSE) {
-  mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.RData')
+mean_expression_analysis <- function(data.type, feature.types = c("selection"), force.rerun = FALSE) {
+  mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.', 
+                                  paste0( feature.types, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
   meta.data = get_meta_data(data.type)
   if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
@@ -47,7 +48,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), 
                                 paste0(feature.type, "_fc_beta_pval")))
   }
-
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
 #  for(i in 1:3){
@@ -76,7 +76,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     if(data.type == "CR.Rat"){ # Convert to dummy variables 
       cell_types_categories = levels(SC$cell_types)
     }
-
 
     cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
     
@@ -132,7 +131,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       } # end loop on feature type
 
       
-      # TODO: Add multiple linear regression with all features together! (for each age group separately!)
+      # Add multiple linear regression with all features together! (for each age group separately!)
       reg.ctr = 1
       all.features.gene.names <- SC_gene_name  # genes that both appear in the tissue, and have ALL features 
       for(feature.type in feature.types)
@@ -159,9 +158,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         gene.mean.by.age.group.reg <- rowMeans(counts.mat[cur.gene.ind, cur.ind])  # Take only filtered cells
         
         reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = cur_gene_features_mat[cur.gene.ind,])  # Take log of fold-change. Maybe take difference? (they're after log)
-#        beta_log_fc = reg.model$coefficients[2] 
-#        p_val_fc = summary(log_fc_lm)$coef[2,4]    
-        
+
         DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get p-values (excluding intercept)
         DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
         reg.ctr = reg.ctr + 1

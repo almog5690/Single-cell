@@ -1,17 +1,16 @@
 library(Seurat)
 library(BASiCS)
 
-
-overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "selection") {
+# General function for overdispersion analysis for all data types 
+overdispersion_analysis <- function(data.type, force.rerun = FALSE, attribute = "selection") {
   disp.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.analysis.', data.type, '.RData')
   disp.selc.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.selection.analysis.', data.type, '.RData')
-  disp.len.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.length.analysis.', data.type, '.RData')
+  disp.len.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.length.analysis.', data.type, '.RData') # separate files for each feature -> change to one file
   
   samples <- get_tissue_file_names(data.type)
-  
   meta.data = get_meta_data(data.type)
   
-  if(attribute == "OD")
+  if(attribute == "OD")  # attribute == feature
   {
     if(file.exists(disp.analysis.outfile) & (force.rerun==FALSE))
     {
@@ -19,7 +18,6 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "
       return(DF_OD_res)
     }
   }
-  
   if(attribute == "selection")
   {
     if(file.exists(disp.selc.analysis.outfile) & (force.rerun==FALSE))
@@ -42,7 +40,6 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "
     gene_att = read_gene_features("gene.len")
     gene_name = names(gene_att)
   } 
-  
   
   groups = dataset_to_age_groups(data.type) # replace above code 
 
@@ -91,49 +88,20 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "
     if(attribute != "OD"){
       genes_attribute = gene_att[gene_name %in% (SC_gene_name)] # Filtering the selection score to genes that are found in the current tissue
       cur_gene_name = gene_name[gene_name %in% (SC_gene_name)] # The names of the filtered genes
-      
     }
     
     cells_ind = c(1:(n_cell_types+1))[-earase] # Vector of valid cell types.
     if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1)) 
     
     for(k in cells_ind){
-      if(data.type == "TM.droplet"){  # Why specific code for each dataset here? 
-        # Differential over-dispersion test results file
-        test_file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k],data.type,"drop 3-24 same-mean.RData"))
-        
-        # Old Markov chain file name
-        old_file = paste0(basics.dir,paste0("/chains","chain_",paste(samples$organs[i],cell_types_categories[k],"21-24m","drop"),".Rds"))
-        # Young Markov chain file name
-        young_file = paste0(basics.dir,paste0("/chains","chain_",paste(samples$organs[i],cell_types_categories[k],"3m","drop"),".Rds"))
-        
-      }
-      if(data.type == "TM.facs"){
-        # Differential over-dispersion test results file
-        test_file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k],"same-mean.RData"))
-        
-        # Old Markov chain file name
-        old_file = paste0(basics.dir,paste0("/chains","chain_",paste(samples$organs[i],cell_types_categories[k],"old"),".Rds"))
-        # Young Markov chain file name
-        young_file = paste0(basics.dir,paste0("/chains","chain_",paste(samples$organs[i],cell_types_categories[k],"young"),".Rds"))
-      }
-      if(data.type == "CR.Rat"){
-        # Differential over-dispersion test results file
-        test_file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[j],cell_types_categories[ct_ind + 1],"rats",".RData"))
-        # Old Markov chain file name
-        old_file = paste0(basics.dir,paste0("/chains","chain_", paste(samples$organs[j],cell_types_categories[ct_ind+1],"rats","old"),".Rds"))
-        # Young Markov chain file name
-        young_file = paste0(basics.dir,paste0("/chains","chain_", paste(samples$organs[j],cell_types_categories[ct_ind+1],"rats","young"),".Rds"))
-      }
-      if(!file.exists(test_file)){ # Checking if the file exist
-        load(test_file)
-        
+      BASiCS.files <- dataset_to_BASiCS_file_names(data.type)
+      if(!file.exists(BASiCS.files$test)){ # Checking if the file exist
+        load(BASiCS.files$test)
       } else {
-        if(!(file.exists(old_file) & file.exists(young_file))) next() # Checking if both old and young Markov chain files exist.
-        
+        if(!(file.exists(BASiCS.files$old) & file.exists(BASiCS.files$young))) next() # Checking if both old and young Markov chain files exist.
         # Loading Marov-chain files
-        chain_old = BASiCS_LoadChain(RunName = old_file)
-        chain_young = BASiCS_LoadChain(RunName = young_file)
+        chain_old = BASiCS_LoadChain(RunName = BASiCS.files$old)
+        chain_young = BASiCS_LoadChain(RunName = BASiCS.files$young)
         
         # Differential over-dispersion test - only on genes without significant difference in mean expression
         test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
@@ -141,12 +109,12 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "
                              EpsilonM = 0, EpsilonD = log2(1.5),
                              EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10)
         
-        if(data.type == "TM.droplet"){
-          save(test,file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData")))
+        if(data.type == "TM.droplet"){ # why not use the same file name from above? 
+          save(test,file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k], "drop 3-24 same-mean.RData")))
           
         } 
         if(data.type == "TM.facs"){
-          save(test,file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k],"same-mean.RData")))
+          save(test,file = paste0(basics.dir,paste("/DVT/DVT",samples$organs[i],cell_types_categories[k], "same-mean.RData")))
           
         }
       }
@@ -178,7 +146,6 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE,attribute = "
         Mean_log_fc = Mean_df$MeanLog2FC # mean expression log2 fold change
         Mean_old = Mean_df$Mean1 # old mean
         Mean_young = Mean_df$Mean2 # young mean
-        
         
         # corr per age group
         Disp_old = df$Disp1 # old over-dispersion vector
