@@ -13,7 +13,7 @@ data.types = c("TM.facs", "TM.droplet", "CR.Rat")
 data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR")   # Names of directories 
 names(data.dirs) = data.types 
 
-processed.files.str <- c("facs", "drop", "??") # match these (then rds)
+processed.files.str <- c("facs", "drop", "rat") # match these (then rds)
 names(processed.files.str) = data.types
 
 data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
@@ -62,8 +62,6 @@ filter.params$min.cells.total <- 100
 filter.params$min.cells.per.age <- 20
 
 
-
-
 # Include all needed source files 
 source("scRNA_seq_utilities.R")
 source("scRNA_seq_preprocess.R")
@@ -104,7 +102,7 @@ if(var.analysis)
 # Plot figures: 
 if(mean.figures)
 {
-  draw_mean_figures(c("TM.facs", "TM.droplet"), 1) # data.type, 3) # Choose specific figure (no need data.type. Figure combines droplet+facs)
+  draw_mean_figures(c("TM.facs", "TM.droplet"), 2) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 }
 
 if(mean.figures)

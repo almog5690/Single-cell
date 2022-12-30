@@ -54,7 +54,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
   for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
-    SC = readRDS(file = paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
+    SC = readRDS(file = paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
     young.ind = c(SC@meta.data$age %in% groups$young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(SC@meta.data$age %in% groups$old_ages_1) # index for cells that came from old mouses

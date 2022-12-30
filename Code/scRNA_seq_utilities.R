@@ -43,7 +43,6 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
   n_cell_types = max(cell_types) # Number of cell types
   erase = vector()
   
-  
   for(ct_ind in 0:n_cell_types){ # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
     if(sum(cell_types==ct_ind) < filter.params$min.cells.total |
        sum(cell_types==ct_ind & young.ind) < filter.params$min.cells.per.age |
@@ -104,7 +103,6 @@ read_gene_features  <- function(feature.names)
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1
   }  
-  
   return(gv)
 }
 
@@ -118,6 +116,7 @@ get_density <- function(x, y, ...) { # function for figures 4 and 5
 }
 
 
+# Divide to old and young in each dataset
 dataset_to_age_groups <- function(data.type) { # set specific ages for all age groups in all datasets
   old_ages_2 = c()
   if(data.type == "TM.droplet")
@@ -162,5 +161,3 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 
   return(list(test=test_file, old=old_file, young=young_file))
 }
-
-
