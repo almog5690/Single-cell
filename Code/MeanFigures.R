@@ -48,7 +48,6 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
     if(is.null(tissue) | is.null(cell_type)){
       stop("Tissue or cell type not provided")
     }
-    
     gene_features = read_gene_features(c("selection"))  # Problem: we need the same number of genes !!! 
     gene_selection = gene_features[[1]]
     gene_name <- names(gene_selection)
@@ -57,7 +56,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
     for(i in 1:n.datas) {   
       meta.data = get_meta_data(data.types[[i]])
       samples <- get_tissue_file_names(data.types[[i]])
-      
+      groups <- dataset_to_age_groups(data.types[[i]])
 
       # Choosing cell to highlight (default: Lung's type 2 pneumocyte)
       highlight_cell = which(DF_cors[[i]]$Organs == tissue & DF_cors[[i]]$Cell_type == cell_type)
@@ -80,14 +79,14 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
       
       SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.type], ".rds")) # Current (Lung) tissue seurat object
-      print(paste0("Read SC ", i))
+      list2env(tissue_to_age_inds(data.types[[i]], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+      
       
       counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lng tissue
-      young.ind = c(SC@meta.data$age %in% c("3m")) # index for cells that came from young mice
+#      young.ind = c(SC@meta.data$age %in% c("3m")) # index for cells that came from young mice
       SC_gene_name = toupper(rownames(SC)) # genes names in upper case letters
       rownames(counts.mat) = SC_gene_name 
       cell_types = SC@meta.data$cell.ontology.class # Cell types vector
-      
       
       gene_selc = gene_selection[gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
       cur_gene_name = gene_name[gene_name %in% (SC_gene_name )] # the names of the filtered genes
@@ -105,7 +104,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       gene_mean_young = gene_mean_young[cur_gene_name]
       
       # Filtering genes with less then 10 reads in current cell type
-      genes_ind = rowSums(SC@assays$RNA@counts[,cell_types==k-1]) > 10
+      genes_ind = rowSums(SC@assays$RNA@counts[,cell_types==k-1]) > filter.params$min.count # 10
       names(genes_ind) = toupper(names(genes_ind))
       genes_ind = genes_ind[cur_gene_name]
       
@@ -113,10 +112,11 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       gene_selc = gene_selc[genes_ind]
       gene_mean_old = gene_mean_old[genes_ind]
       gene_mean_young = gene_mean_young[genes_ind]
-      print(paste0("Data-frame ", i))
-      
+
       # data frame contains old and young genes mean expression and selection for the plots
-      df = data.frame("Mean" = c(gene_mean_old,gene_mean_young),"Selection" = c(gene_selc,gene_selc),"Age" = rep(c("Old","Young"),each = length(gene_selc)))
+      df = data.frame("Mean" = c(gene_mean_old, gene_mean_young),
+                      "Selection" = c(gene_selc,gene_selc),
+                      "Age" = rep(c("Old","Young"),each = length(gene_selc)))
       
       # ranking selection and old and young mean expressions
       g = na.omit(gene_selc)
@@ -125,7 +125,9 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       mean_old_rank = rank(gene_mean_old[names(g)],ties.method = "average")
       
       # data frame contains old and young genes mean expression and selection ranks for the plots
-      df_4 = data.frame("Mean" = c(mean_old_rank,mean_young_rank),"Selection" = c(selc_rank,selc_rank),"Age" = rep(c("Old","Young"),each = length(selc_rank)))
+      df_4 = data.frame("Mean" = c(mean_old_rank,mean_young_rank),
+                        "Selection" = c(selc_rank,selc_rank),
+                        "Age" = rep(c("Old","Young"),each = length(selc_rank)))
       
       # Should replace this with actual computed correlation. No need for p-value
       age_name = c("Old" = paste0("Old: ","\u03c1","=0.18"), # ,p<2.2e-16"),
@@ -133,14 +135,13 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       
       # getting the 2D density of selection and mean for the plots
       df_4$density =  get_density(df_4$Mean, df_4$Selection, n = 100)
-      print(paste0("ggplot-again ", i))
-      
+
       # Selection rank vs mean expression rank for both young and old for the Lung Pneumocyte cell type
       p_denst[[i]] = ggplot(df_4) +
         geom_point(aes(x = Mean, y = Selection, fill = density),color = "white", 
                    alpha = 1, size = 1.8,  shape = 21, show.legend = T) +
         scale_fill_gradientn(colors = matlab.like(100)) + 
-        facet_wrap(~Age,labeller = labeller(Age = age_name)) + 
+        facet_wrap(~Age, labeller = labeller(Age = age_name)) + 
         geom_smooth(method = "lm",se = F,data = df_4,aes(x = Mean, y = Selection,color = Age)) +
         scale_color_manual(values = c("Old"="#00ba38", "Young"="#f8766d")) +
         labs(title = paste(samples$organs[i],cell_types_categories[k],sep = ": "),x = "Mean expression rank", y = "Selection rank") + 
@@ -154,12 +155,10 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
                                                 color = "black", face = "bold", size = 14))
     
     
-    
 #    title = ggdraw() + draw_label("Genes selection and mean correlation") # plot title
 #    p = plot_grid(p_denst,p3,p_denst_drop,p3_drop,labels = LETTERS[1:4]) 
 #    plot_grid(title,p,ncol=1, rel_heights=c(0.1, 1))
 #    ggsave(paste(analysis.figures.dir,"selection and mean corr gene-filter density and cor plot.png",sep = "/"),height = 6,width = 9)
-    
   }
   
   if(fig.num == 11) #### Figure 11

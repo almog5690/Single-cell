@@ -50,20 +50,21 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
   }
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
-#  for(i in 1:3){
   for(i in 1:length(samples$organs)){
     read.file <- paste0(processed.data.dir, '/', samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-    young.ind = c(SC@meta.data$age %in% groups$young_ages) # index for cells that came from 3 month old mouses
-    old.ind = c(SC@meta.data$age %in% groups$old_ages_1) # index for cells that came from old mouses
-    if(sum(old.ind) == 0){ # Empty
-      old.ind = c(SC@meta.data$age %in% groups$old_ages_2)
-    }
-    if((data.type == "TM.droplet") & (i==6)){ # special tissue for droplet (which?). Should move this line
-      old.ind = SC@meta.data$age %in% c("18m","21m")
-    }
+    
+    list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+#    young.ind = c(SC@meta.data$age %in% groups$young_ages) # index for cells that came from 3 month old mouses
+#    old.ind = c(SC@meta.data$age %in% groups$old_ages_1) # index for cells that came from old mouses
+#    if(sum(old.ind) == 0){ # Empty
+#      old.ind = c(SC@meta.data$age %in% groups$old_ages_2)
+#    }
+#    if((data.type == "TM.droplet") & (i==6)){ # special tissue for droplet (which?). Should move this line
+#      old.ind = SC@meta.data$age %in% c("18m","21m")
+#    }
     
     n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
@@ -157,7 +158,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         
         gene.mean.by.age.group.reg <- rowMeans(counts.mat[cur.gene.ind, cur.ind])  # Take only filtered cells
         
-        reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = cur_gene_features_mat[cur.gene.ind,])  # Take log of fold-change. Maybe take difference? (they're after log)
+        reg.model <- lm(gene.mean.by.age.group.reg ~ ., data = as.data.frame(cur_gene_features_mat[cur.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
 
         DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get p-values (excluding intercept)
         DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
@@ -173,7 +174,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       mean_young = rowMeans(counts.mat[fc.gene.ind, young.ind])   # filtered young mean expression vector
       mean_old = rowMeans(counts.mat[fc.gene.ind, old.ind])   # filtered young mean expression vector
       
-      fc.reg.model <- lm(log(mean_old / mean_young) ~ ., data = cur_gene_features_mat[fc.gene.ind,])  # Take log of fold-change. Maybe take difference? (they're after log)
+      fc.reg.model <- lm(log(mean_old / mean_young) ~ ., data = as.data.frame(cur_gene_features_mat[fc.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
       DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
       DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
       reg.ctr = reg.ctr + 1

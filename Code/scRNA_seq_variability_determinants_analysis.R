@@ -24,26 +24,25 @@ user.name = "Or" #  "Almog"  # Or
 if(user.name == "Almog")
 {
   main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  data.dir = "C:/Users/almog/Singel cell"  # Change to directory with all the data
+  main.data.dir = "C:/Users/almog/Singel cell"  # Change to directory with all the data
 } else # Or 
 {
   # Directories 
   main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  data.dir = paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
+  main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/" 
+  #   paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
 }
-
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 
+data.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
+gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
 raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
 processed.data.dir <- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
                                                        # after running scRNA_seq_preprocess.R. Format: *.rds files. 
                                                        # This directory will also contain one meta.data file for each dataset. 
-gene.data.dir <- paste0(main.dir, 'GeneLevelData/')  # For gene features (selection, length ...)
-
 analysis.results.dir <- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
 analysis.figures.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
 basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
-
 
 setwd(code.dir)
 

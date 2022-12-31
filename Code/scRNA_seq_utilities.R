@@ -149,6 +149,20 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
 }
 
 
+# Get indices of samples 
+tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set specific ages for all age groups in all datasets
+  young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
+  old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses
+  if(sum(old.ind) == 0){ # Empty
+    old.ind = c(meta.data$age %in% age.groups$old_ages_2)
+  }
+  if((data.type == "TM.droplet") & (organ=="Lung")){ # special tissue for droplet (which?). Should move this line
+    old.ind = meta.data$age %in% c("18m","21m")
+  }
+  return(list(young.ind=young.ind, old.ind=old.ind))
+}
+
+
 # Getting file names for reading BASiCS results 
 dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 {
