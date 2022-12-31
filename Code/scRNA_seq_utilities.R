@@ -76,7 +76,7 @@ read_gene_features  <- function(feature.names)
       gene.values = select$pLI # the selection score vector
       names(gene.values) = gene.names # naming each score with the gene it belongs to
     }
-    if(feature.name %in% c("gene.len", "gene.length"))
+    if(feature.name %in% c("gene.len", "gene.length", "genes.len"))
     {
       # reading the transcript length data
       length_data = read.delim(paste0(gene.data.dir, "mart_export.txt"))
