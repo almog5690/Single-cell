@@ -57,20 +57,12 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
     
     list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
-#    young.ind = c(SC@meta.data$age %in% groups$young_ages) # index for cells that came from 3 month old mouses
-#    old.ind = c(SC@meta.data$age %in% groups$old_ages_1) # index for cells that came from old mouses
-#    if(sum(old.ind) == 0){ # Empty
-#      old.ind = c(SC@meta.data$age %in% groups$old_ages_2)
-#    }
-#    if((data.type == "TM.droplet") & (i==6)){ # special tissue for droplet (which?). Should move this line
-#      old.ind = SC@meta.data$age %in% c("18m","21m")
-#    }
-    
-    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
-    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
+
+#    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
+#    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
+#    all.ind = rep(TRUE, n_cell)
     SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
     rownames(counts.mat) = SC_gene_name 
-    all.ind = rep(TRUE, n_cell)
     
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop

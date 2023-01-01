@@ -106,6 +106,41 @@ read_gene_features  <- function(feature.names)
   return(gv)
 }
 
+
+
+# Compute features of expression (mean, overdispersion, variance ... )
+# for a given tissue/cell type
+# cell.types - which ones. Default: all types in a given tissue
+# expression.stats - which expression statistics to extract 
+# Need both organ and seurat output (it doesn't contain the organ/tissue)
+extract_expression_features <- function(data.type, expression.stats = c("mean"), organ, SeuratOutput=c(), cell.types=c())
+{
+  # First load data if not loaded already 
+  if(length(SeuratOutput)==0) # empty
+    SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+  counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
+  
+  # For overdispersion read DVT files if they exist/run basics  
+  
+  
+  # Next, extract mean
+  for(stat in expression.stats)
+  {
+    if(stat == "mean")
+    {
+      # Repear for all age groups and features 
+      gene.mean.by.age.group[age.group] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+      
+    }
+    if(stat == "overdispersion")
+    {
+      
+    }
+  }
+  
+}
+  
+
 # Computing density for plotting
 get_density <- function(x, y, ...) { # function for figures 4 and 5
   dens <- MASS::kde2d(x, y, ...)
@@ -159,7 +194,9 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
   if((data.type == "TM.droplet") & (organ=="Lung")){ # special tissue for droplet (which?). Should move this line
     old.ind = meta.data$age %in% c("18m","21m")
   }
-  return(list(young.ind=young.ind, old.ind=old.ind))
+  n_cell <- length(meta.data$age)
+  all.ind = rep(TRUE, n_cell)
+  return(list(young.ind=young.ind, old.ind=old.ind, all.ind=all.ind))
 }
 
 

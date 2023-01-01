@@ -89,8 +89,8 @@ if(preprocess)
 
 if(mean.analysis)
 {
-  DF_cor.drop = mean_expression_analysis("TM.droplet", feature.types = c("selection", "gene.len"), force.rerun = TRUE)  # Should be both droplet and facs in the same function
-  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = c("selection", "gene.len"), force.rerun = TRUE)  # Should be both droplet and facs in the same function
+  DF_cor.drop = mean_expression_analysis("TM.droplet", feature.types = c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = c("selection", "gene.len"))  # Should be both droplet and facs in the same function
 }
   
 if(var.analysis)
