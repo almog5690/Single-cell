@@ -168,8 +168,9 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 {
   groups = dataset_to_age_groups(data.type)
   # Read cell type categories 
+  RData_finish = ifelse(data.type == "TM.droplet","drop 3-24 same-mean.RData","same-mean.RData")
   tissue.cell.type <- paste(tissue,cell_type)
-  test_file = paste0(basics.dir, paste("DVT/DVT", tissue.cell.type, data.type, groups$test_str, ".RData"))   # Differential over-dispersion test results file
+  test_file = paste0(basics.dir, paste(paste0("DVT/",data.type,"/DVT"), tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
   old_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$old_str), ".Rds")     # Old Markov chain file name
   young_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$young_str), ".Rds")     # Young Markov chain file name
 
