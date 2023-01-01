@@ -58,7 +58,7 @@ BASics_droplet <- function(data.type)
                              EpsilonM = 0, EpsilonD = log2(1.5),
                              EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10) 
         
-        save(test,file = paste0(basics.dir,paste("/DVT/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData"))) 
+        save(test,file = paste0(basics.dir,paste("/DVT/droplet/DVT",drop_organs[i],cell_types_categories[k],"drop 3-24 same-mean.RData"))) 
         
       }
     }
@@ -118,7 +118,7 @@ BASiCS_facs <- function()
                              EpsilonM = 0, EpsilonD = log2(1.5),
                              EpsilonR = log2(1.5)/log2(exp(1)),EFDR_M = 0.10, EFDR_D = 0.10) 
         
-        save(test,file = paste0(basics.dir,paste("/DVT/DVT",organs[i],cell_types_categories[ct_ind + 1],"same-mean.RData")))
+        save(test,file = paste0(basics.dir,paste("/DVT/facs/DVT",organs[i],cell_types_categories[ct_ind + 1],"same-mean.RData")))
         
       }
     }
@@ -166,7 +166,7 @@ BASiCS_rats <- function()
       test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",GroupLabel2 = "Young",
                            OffSet = T,Plot = T,EpsilonR = log2(1.5)/log2(exp(1)),
                            EFDR_M = 0.10, EFDR_D = 0.10)
-      save(test,file = paste0(basics.dir,paste("/DVT/DVT",rats_organs[j],cell_types_categories[ct_ind + 1],"rats",".RData")))
+      save(test,file = paste0(basics.dir,paste("/DVT/rats/DVT",rats_organs[j],cell_types_categories[ct_ind + 1],"same-mean.RData")))
       
       
       
