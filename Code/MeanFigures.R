@@ -78,7 +78,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
       cell_types_categories = meta.data[[tissue.ind]]$cell_ontology_class # the names of the different cell-types
       k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
       
-      SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.type], ".rds")) # Current (Lung) tissue seurat object
+      SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[[i]]], ".rds")) # Current (Lung) tissue seurat object
       list2env(tissue_to_age_inds(data.types[[i]], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
       
       
@@ -134,7 +134,7 @@ draw_mean_figures <- function(data.types, fig.num, tissue = "Lung", cell_type = 
                    "Young" = paste0("Young: ","\u03c1","=0.21")) # ,p<2.2e-16"))
       
       # getting the 2D density of selection and mean for the plots
-      df_4$density =  get_density(df_4$Mean, df_4$Selection, n = 100)
+      df_4$density =  get_density(df_4$Mean, df_4$Selection, n = 100) # problem here: df_4 is empty!!!! 
 
       # Selection rank vs mean expression rank for both young and old for the Lung Pneumocyte cell type
       p_denst[[i]] = ggplot(df_4) +
