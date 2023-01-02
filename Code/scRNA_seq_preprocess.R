@@ -26,7 +26,14 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
   }
   if(data.type == "TM.facs") # Fill in .. 
   {
-    
+    # getting organs metadata 
+    meta.data = list() 
+    for(i in 1:length(facs.files)){
+      meta = h5read(facs.files[i],"uns")
+      meta = meta[grep("categories",names(meta))]
+      names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
+      meta.data[[i]] = meta
+    }
   }
   
   save(meta.data, file = meta.data.file)  
@@ -83,14 +90,8 @@ preprocess_facs <- function()
   organs  = sapply(facs.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
   organs = unname(organs)
   
-  # getting organs metadata 
-  meta.data = list() 
-  for(i in 1:length(facs.files)){
-    meta = h5read(facs.files[i],"uns")
-    meta = meta[grep("categories",names(meta))]
-    names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
-    meta.data[[i]] = meta
-  }
+  meta.data.drop = get_meta_data(data.type) # getting organs metadata 
+  
   
   # Pre-processing the raw data + downsampling
   for(i in 1:length(facs.files)){
