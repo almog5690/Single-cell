@@ -1,6 +1,22 @@
 # Utilities needed for single cell analysis and visualization 
 library(readxl)
 
+
+set_data_dirs <- function(data.type)
+{
+  # Set globally: 
+  data.dir <<- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
+  raw.data.dir <<- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
+  processed.data.dir <<- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
+  # after running scRNA_seq_preprocess.R. Format: *.rds files. 
+  # This directory will also contain one meta.data file for each dataset. 
+  analysis.results.dir <<- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
+  analysis.figures.dir <<- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
+  basics.dir <<- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
+  
+  # Return all in a list 
+}
+
 # Get tissues. Use the processed files if they exist (otherwise need to go back to raw files?)
 get_tissue_file_names <- function(data.type)
 {
@@ -8,7 +24,6 @@ get_tissue_file_names <- function(data.type)
   # load("meta.data.drop.Rdata")
   # load("facs.files.RData")
   # load("meta.data.facs.RData")
-  
   if(data.type == "TM.droplet")
   {
     load(paste0(processed.data.dir, "/meta.data.drop.RData"))
@@ -26,13 +41,11 @@ get_tissue_file_names <- function(data.type)
     organs  = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1])) # facs organs names
     #    organs[5] = "Brain_Non-Myeloid" # why needed?
   }
-  
   if(data.type == "CR.Rat")  # to fill 
   {
     organs = c("Aorta","BAT","BM","Brain","Muscle","Skin","WAT","Kidney","Liver")
-    file.names = paste(organs,"rds",sep = ".")
+    file.names = paste(organs,"rds", sep = ".")
   }
-  
   return(list(file.names = file.names, organs = organs))
 }
 
@@ -51,10 +64,8 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
       next()
     }
   }
-  
   cells_ind = c(1:(n_cell_types+1))[-erase]
   if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1))
-  
   return(cells_ind) # indices of cells that we keep 
 }
 
@@ -83,13 +94,16 @@ read_gene_features  <- function(feature.names)
       gene.values = length_data[,7] # gene length vector
       names(gene.values) = toupper(length_data[,6]) # Add gene names. Note: there are many values per gene 
     }
-    if(feature.name == "TATA")
+    if(feature.name %in% c("TATA", "GC", "CpG"))
     {
-      tata.data <- read.delim(paste0(gene.data.dir, "mm10_tata_annotation_v3.3.tsv"))
-      # TATA BOX
-      gene.values <- as.integer(unlist(lapply(tata.data$TATA.Box.TBP..Promoter.Homer.Distance.From.Peak.sequence.strand.conservation., nchar)) > 0)
-      gene.values2 <- tata.data$GC.
-      gene.values2 <- tata.data$CpG.
+      if(!exists('tata.data')) # read only once 
+        tata.data <- read.delim(paste0(gene.data.dir, "mm10_tata_annotation_v3.3.tsv"))
+      if(feature.name == "TATA")# TATA BOX
+        gene.values <- as.integer(unlist(lapply(tata.data$TATA.Box.TBP..Promoter.Homer.Distance.From.Peak.sequence.strand.conservation., nchar)) > 0)
+      if(feature.name == "GC")
+        gene.values <- tata.data$GC.
+      if(feature.name == "CpG")
+        gene.values <- tata.data$CpG.
       names(gene.values) <- tata.data$Gene.Name
     }
     if(feature.name == "mRNA.half.life")
@@ -98,6 +112,11 @@ read_gene_features  <- function(feature.names)
       gene.values <- half.life.data$Half_life_PC1
       names(gene.values) <- half.life.data$Gene.name
     }
+    if(feature.name == "gene.age")  # extract gene age (T.B.D.)
+    {
+      
+    }
+    
     
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x

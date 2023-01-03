@@ -34,15 +34,16 @@ if(user.name == "Almog")
 }
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 
-data.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
 gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
-raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
-processed.data.dir <- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
-                                                       # after running scRNA_seq_preprocess.R. Format: *.rds files. 
-                                                       # This directory will also contain one meta.data file for each dataset. 
-analysis.results.dir <- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
-analysis.figures.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
-basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
+
+#data.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
+#raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
+#processed.data.dir <- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
+#                                                       # after running scRNA_seq_preprocess.R. Format: *.rds files. 
+#                                                       # This directory will also contain one meta.data file for each dataset. 
+#analysis.results.dir <- paste0(data.dir, 'Analysis/')  # For analysis results (one per dataset for each analysis, e.g. mean, overdispersion ..), 
+#analysis.figures.dir <- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
+#basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
 
 setwd(code.dir)
 
@@ -72,7 +73,7 @@ source("OverdispersionFigures.R")
 
 
 # Features to examine (currently, only the first two are implemented)
-feature.types = c("gene.len", "selection", "GC%", "CpG%", "TATA", "gene.age", "mRNA.half.life")
+feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG")  # These aren't ready yet: "GC", "CpG%",  "gene.age", )
 
 # What analysis to do: 
 preprocess = FALSE
@@ -89,8 +90,9 @@ if(preprocess)
 
 if(mean.analysis)
 {
-  DF_cor.drop = mean_expression_analysis("TM.droplet", feature.types = c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  DF_cor.drop = mean_expression_analysis("TM.droplet", feature.types =feature.types) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
   DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  DF_cor.rat = mean_expression_analysis("CR.Rat", feature.types = c("selection", "gene.len"))  
 }
   
 if(var.analysis)
