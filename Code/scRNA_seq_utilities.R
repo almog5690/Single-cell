@@ -104,13 +104,13 @@ read_gene_features  <- function(feature.names)
         gene.values <- tata.data$GC.
       if(feature.name == "CpG")
         gene.values <- tata.data$CpG.
-      names(gene.values) <- tata.data$Gene.Name
+      names(gene.values) <- toupper(tata.data$Gene.Name)
     }
     if(feature.name == "mRNA.half.life")
     {
       half.life.data <-  read_excel(paste0(gene.data.dir, "13059_2022_2811_MOESM3_ESM.xlsx"), sheet = "mouse", skip =2)
       gene.values <- half.life.data$Half_life_PC1
-      names(gene.values) <- half.life.data$Gene.name
+      names(gene.values) <- toupper(half.life.data$Gene.name)
     }
     if(feature.name == "gene.age")  # extract gene age (T.B.D.)
     {

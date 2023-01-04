@@ -3,7 +3,6 @@ library(Seurat)
 
 # Perform mean expression analysis for single cell RNA seq dataset
 mean_expression_analysis <- function(data.type, feature.types = c("selection"), force.rerun = FALSE) {
-  
   # Set data directories: 
   set_data_dirs(data.type)
   
@@ -54,8 +53,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
   }
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
-  #  for(i in 1:length(samples$organs)){
-  for(i in 1:2){
+  for(i in 1:length(samples$organs)){  # for(i in 1:2){
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = read.file) # Current tissue seurat object
@@ -65,7 +63,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     
     #    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     #    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
-    #    all.ind = rep(TRUE, n_cell)
     SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
     if(length(SC_gene_name) != dim(counts.mat)[1]) { # For rats, names are already in the matrix
       SC_gene_name = toupper(rownames(counts.mat)) 
@@ -101,11 +98,9 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         # 1. Pearson correlations for all, young, old
         gene.mean.by.age.group <- data.frame(matrix(ncol = 3, nrow = length(cur_gene_name[[feature.type]])))
         colnames(gene.mean.by.age.group) <- c("all", "young", "old")
-        print("Run age groups:")
-        
+
         for(age.group in colnames(gene.mean.by.age.group))
         {
-          print(paste0("Run age group: ", age.group))
           cur.ind = switch(age.group, # Indices of cells in each group
                            "all" = all.ind, 
                            "young" = young.ind, 
@@ -120,7 +115,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         
         # 2. Fold-change       
         # Filtering genes with low expression for old AND for young (less than 10 counts)
-        print("Run fold-change:")
         fc.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&young.ind]) > filter.params$min.count |
           rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&old.ind]) > filter.params$min.count  # choose genes for fold-change. Filter on both young and old
         names(fc.gene.ind) = toupper(names(fc.gene.ind))
@@ -137,12 +131,10 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         DF_cor[cell.type.ctr, "Cell_type"] <- cell_types_categories[k]
       } # end loop on feature type
       
-      
-      print("Run regression:")
       # Add multiple linear regression with all features together! (for each age group separately!)
       reg.ctr = 1
       all.features.gene.names <- SC_gene_name  # genes that both appear in the tissue, and have ALL features 
-      for(feature.type in feature.types)
+      for(feature.type in feature.types)  # get few in intersection
         all.features.gene.names <- intersect(all.features.gene.names, names(gene_features[[feature.type]]))
       n.gene.with.all.features <- length(all.features.gene.names)
       cur_gene_features_mat <- matrix(data = 0, nrow = n.gene.with.all.features, ncol = n.features)         # Intersect with data gene names 
@@ -152,11 +144,8 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       cur_gene_features_mat <- as.data.frame(cur_gene_features_mat)
       row.names(cur_gene_features_mat) <- all.features.gene.names
       
-      print("Run regression age-groups:")
       for(age.group in colnames(gene.mean.by.age.group))
       {
-        print(paste0("Do regression ", age.group))
-        
         cur.ind = switch(age.group, # Indices of cells in each group
                          "all" = all.ind, 
                          "young" = young.ind, 
@@ -170,14 +159,11 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         
         reg.model <- lm(gene.mean.by.age.group.reg ~ ., 
                         data = as.data.frame(cur_gene_features_mat[cur.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
-        print(paste0("Run model regression ", age.group))
-        
         DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get p-values (excluding intercept)
         DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
         reg.ctr = reg.ctr + 1
       }
       
-      print("Do regression FC")
       # Do regression for fold-change 
       fc.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&young.ind]) > filter.params$min.count &  # require both !! 
         rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&old.ind]) > filter.params$min.count  # choose genes for fold-change. Filter on both young and old
