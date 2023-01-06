@@ -84,9 +84,10 @@ if(preprocess)
 
 if(mean.analysis)
 {
-  DF_cor.drop = mean_expression_analysis("TM.droplet", feature.types =feature.types) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
-  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = feature.types)  # Should be both droplet and facs in the same function
-  DF_cor.rat = mean_expression_analysis("CR.Rat", feature.types = c("selection", "gene.len"))  
+  for(data.type in data.types)
+    DF_cor.drop = mean_expression_analysis(data.type, feature.types = feature.types, force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+#  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = feature.types)  # Should be both droplet and facs in the same function
+#  DF_cor.rat = mean_expression_analysis("CR.Rat", feature.types = c("selection", "gene.len"))  
 }
   
 if(var.analysis)
@@ -97,9 +98,10 @@ if(var.analysis)
 # Plot figures: 
 if(mean.figures)
 {
-  draw_mean_figures(c("TM.facs", "TM.droplet"), 2, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
-  draw_mean_figures(c("CR.Rat"), 1, feature.types = c("selection", "gene.len")) 
-  draw_mean_figures(c("CR.Rat"), 2, feature.types = c("selection", "gene.len"), 
+  for (fig.num in c(1,2,11,111))
+    draw_mean_figures(c("TM.facs", "TM.droplet"), fig.num, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
+#  draw_mean_figures(c("CR.Rat"), 1, feature.types = c("selection", "gene.len")) 
+  draw_mean_figures(c("CR.Rat"), 2, feature.types = feature.types, # c("selection", "gene.len"), 
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
 }
 

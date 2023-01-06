@@ -21,9 +21,9 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
     num.cell.types[i] = dim(DF_cors[[i]])[1]
   }
   
-  if(fig.num %in% c(1, 11))  #### Figure 1 (all) or 11 (fold-change)
+  if(fig.num %in% c(1, 11, 111))  #### Figure 1 (all) or 11 (fold-change) or 111 (abs-fold-change)
   {
-    group.str = if(fig.num == 1) "all" else "fc"
+    group.str = switch(as.character(fig.num), "1" = "all", "11" = "fc", "111" = "fc_abs")  #  == 1) "all" else "fc"
     for(feature.type in feature.types) # Here plot each feature vs. mean expression, not just selection
     {
       cor.col <- paste0(feature.type, "_", group.str, "_cor")

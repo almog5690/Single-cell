@@ -36,8 +36,8 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       col.names <- c(col.names, c(paste0(feature.type, "_", age.group, "_cor"), 
                                   paste0(feature.type, "_", age.group, "_pval")))
     }
-    col.names <- c(col.names, c(paste0(feature.type, "_fc_cor"), 
-                                paste0(feature.type, "_fc_pval")))
+    col.names <- c(col.names, c(paste0(feature.type, "_fc_cor"), paste0(feature.type, "_fc_pval"), 
+                                paste0(feature.type, "_fc_abs_cor"), paste0(feature.type, "_fc_abs_pval")))
   }    
   beta.inds <- seq(length(col.names)+1, length(col.names)+n.features*8, 2)
   beta.pvals.inds <- seq(length(col.names)+2, length(col.names)+n.features*8, 2)
@@ -48,8 +48,8 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       col.names <- c(col.names, c(paste0(feature.type, "_", age.group, "_beta"), 
                                   paste0(feature.type, "_", age.group, "_beta_pval")))
     }
-    col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), 
-                                paste0(feature.type, "_fc_beta_pval")))
+    col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), paste0(feature.type, "_fc_beta_pval"), 
+                                paste0(feature.type, "_fc_abs_beta"), paste0(feature.type, "_fc_abs_beta_pval")))
   }
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
@@ -58,7 +58,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = read.file) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-    
     list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
     
     #    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
@@ -125,15 +124,20 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         mean_young = gene.mean.by.age.group[["young"]][fc.gene.ind]  # filtered young mean expression vector
         mean_old = gene.mean.by.age.group[["old"]][fc.gene.ind]  # filtered young mean expression vector
         
-        # Mean expression fold-change and selection correlation
+        # Mean expression vs. fold-change and selection correlation
         DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_pval"), paste0(feature.type, "_fc_cor"))] <- 
           cor.test(log(mean_old/mean_young), cur_gene_features[[feature.type]][fc.gene.ind],  use = "complete.obs", method = "spearman")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
+
+        # Mean expression vs. Absolute fold-change and selection correlation
+        DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_abs_pval"), paste0(feature.type, "_fc_abs_cor"))] <- 
+          cor.test(abs(log(mean_old/mean_young)), cur_gene_features[[feature.type]][fc.gene.ind],  use = "complete.obs", method = "spearman")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
         
-        # Set other fields      
+        
+        
+        # Finally, set other fields      
         DF_cor[cell.type.ctr, "Organs"] <- samples$organs[i]
         DF_cor[cell.type.ctr, "Cell_type"] <- cell_types_categories[k]
         
-        # TODO: MEAN EXPRESSION FOLD-CHANGE IN ABSOLUTE VALUE. CORRESPONDS TO A DIFFERENT HYPOTHESIS
         
       } # end loop on feature type
       
