@@ -162,16 +162,10 @@ BASiCS_rats <- function()
                                 WithSpikes = F,PrintProgress = FALSE, StoreChains = TRUE, StoreDir = paste0(basics.dir,"/chains"),
                                 RunName = paste(rats_organs[j],cell_types_categories[ct_ind+1],"rats","young"))
       
-
       test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",GroupLabel2 = "Young",
                            OffSet = T,Plot = T,EpsilonR = log2(1.5)/log2(exp(1)),
                            EFDR_M = 0.10, EFDR_D = 0.10)
       save(test,file = paste0(basics.dir,paste("/DVT/CR.Rat/DVT",rats_organs[j],cell_types_categories[ct_ind + 1],"same-mean.RData")))
-      
-      
-      
     }
-    
   }
-  
 }

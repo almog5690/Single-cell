@@ -117,7 +117,6 @@ read_gene_features  <- function(feature.names)
       
     }
     
-    
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1

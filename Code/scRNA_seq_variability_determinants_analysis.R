@@ -7,15 +7,12 @@ library(colorRamps)
 library(ggpointdensity)
 library(ggpubr)
 
-
 # Data types
 data.types = c("TM.facs", "TM.droplet", "CR.Rat") 
 data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR")   # Names of directories 
 names(data.dirs) = data.types 
-
 processed.files.str <- c("facs", "drop", "rat") # match these (then rds)
 names(processed.files.str) = data.types
-
 data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
 
 
@@ -33,7 +30,6 @@ if(user.name == "Almog")
   #   paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
 }
 code.dir <- paste0(main.dir, 'Code/')  # src files 
-
 gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
 
 #data.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
@@ -61,7 +57,6 @@ filter.params$min.count <- 10
 filter.params$min.cells.total <- 100
 filter.params$min.cells.per.age <- 20
 
-
 # Include all needed source files 
 source("scRNA_seq_utilities.R")
 source("scRNA_seq_preprocess.R")
@@ -70,7 +65,6 @@ source("OverdispersionAnalysis.R")
 source("BASiCSAnalysis.R")
 source("MeanFigures.R")
 source("OverdispersionFigures.R")
-
 
 # Features to examine (currently, only the first two are implemented)
 feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG")  # These aren't ready yet: "GC", "CpG%",  "gene.age", )

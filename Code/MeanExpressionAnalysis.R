@@ -132,6 +132,9 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         # Set other fields      
         DF_cor[cell.type.ctr, "Organs"] <- samples$organs[i]
         DF_cor[cell.type.ctr, "Cell_type"] <- cell_types_categories[k]
+        
+        # TODO: MEAN EXPRESSION FOLD-CHANGE IN ABSOLUTE VALUE. CORRESPONDS TO A DIFFERENT HYPOTHESIS
+        
       } # end loop on feature type
       
       # Add multiple linear regression with all features together! (for each age group separately!)

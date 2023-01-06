@@ -7,17 +7,18 @@ library(ggpointdensity)
 source("scRNA_seq_utilities.R")
 
 # Add saving figures to file in code!!! (use ggsave !!! )
-
 draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection", "gene.len"), 
                               tissue = "Lung", cell_type = "type II pneumocyte") {  # default tissue + cell type 
   n.datas <- length(data.types)
   p_feature_vs_mean_bar <- DF_cors <- vector("list", n.datas)
+  num.cell.types <- rep(0, n.datas)
   for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
     set_data_dirs(data.types[i])
     mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.types[i], # '.RData') 
                                     ".", paste0( feature.types, collapse="_"), '.RData') # should include also features 
     load(mean.analysis.outfile)
     DF_cors[[i]] <- DF_cor     #    DF_cors[[i]] <- mean_expression_analysis(data.types[i]) # don't run again 
+    num.cell.types[i] = dim(DF_cors[[i]])[1]
   }
   
   if(fig.num %in% c(1, 11))  #### Figure 1 (all) or 11 (fold-change)
@@ -80,14 +81,20 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
         DF_cors[[i]]$y.plot <- unlist(DF_cors[[i]][cor.old.col])
         textdf <- DF_cors[[i]][highlight_cell, ]
         
-        print("p3")
+        # Signed binomial test
+        num.old.bigger.young = sum(DF_cors[[i]]$y.plot > DF_cors[[i]]$x.plot)
+        num.old.bigger.young.pval = min(1, 2 * pbinom(min(num.old.bigger.young, num.cell.types[i]-num.old.bigger.young), 
+                                                      num.cell.types[i], 0.5))  # two sided test 
+
         # mean expression vs. selection correlation coefficients for both old and young
         p3[[i]] = ggplot(DF_cors[[i]], aes(x.plot, y.plot)) + 
           geom_point(color = "blue") + 
           geom_text(data = textdf, aes(x = x.plot * 1.12, y = y.plot * 0.91, label = cell_type)) +
           geom_abline(slope = 1, intercept = 0, col = "red") +
           geom_point(data = textdf, aes(x = x.plot , y = y.plot), color = "orangered", fill = "orange", size = 3) +
-          labs(title = processed.files.str[data.types[i]], x = "Young cor",y = "Old cor") +
+          labs(title = paste0(processed.files.str[data.types[i]], 
+                              ", Sign test: ", num.old.bigger.young, "/", num.cell.types[i], " Pval=", signif(num.old.bigger.young.pval, 3)), 
+               x = "Young cor",y = "Old cor") +
           theme(plot.title = element_text(size = 10), plot.subtitle = element_text(size = 8), axis.title = element_text(size = 10),legend.position = "none")
 
         ## highlighted cell (Lung Pneumocyte cell) type Mean vs selection for both age groups
@@ -95,13 +102,12 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
         if(data.types[i] == "CR.Rat"){ # Convert to dummy variables 
           cell_types_categories = levels(SC$cell_types)
         } else
-            cell_types_categories = meta.data[[i]]$cell_ontology_class  # the names of the different cell-types
+            cell_types_categories = meta.data[[tissue.ind]]$cell_ontology_class  # the names of the different cell-types
         k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
-        print("Read SC")
-        
+
         SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[i]], ".rds")) # Current (Lung) tissue seurat object
         list2env(tissue_to_age_inds(data.types[i], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
-        counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lng tissue
+        counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lung tissue
         SC_gene_name = toupper(rownames(SC)) # genes names in upper case letters
         if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
           SC_gene_name = toupper(rownames(counts.mat)) 
@@ -150,23 +156,16 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
         mean_old_rank = rank(gene_mean_old[names(g)],ties.method = "average")
         
         # data frame contains old and young genes mean expression and selection ranks for the plots
-        print("df4")
         df_4 = data.frame("Mean" = c(mean_old_rank, mean_young_rank),
                           "gene.feature" = c(selc_rank, selc_rank),
                           "Age" = rep(c("Old","Young"),each = length(selc_rank)))
-        print("age names")
-        # Should replace this with actual computed correlation. No need for p-value
-#        age_name = c("Old" = paste0("Old: ","\u03c1","=0.18"), # ,p<2.2e-16"),
-#                     "Young" = paste0("Young: ","\u03c1","=0.21")) # ,p<2.2e-16"))
-
-        age_name = c("Old" = paste0("Old: ","\u03c1","=", round(DF_cors[[i]][k,cor.old.col], 3)), # ,p<2.2e-16"),
-                     "Young" = paste0("Young: ","\u03c1","=", round(DF_cors[[i]][k,cor.young.col], 3))) # ,p<2.2e-16"))
+        # Display correlation (no need for p-value)
+        age_name = c("Old" = paste0("Old: ","\u03c1","=", round(DF_cors[[i]][highlight_cell,cor.old.col], 3)), # ,p<2.2e-16"),
+                     "Young" = paste0("Young: ","\u03c1","=", round(DF_cors[[i]][highlight_cell,cor.young.col], 3))) # ,p<2.2e-16"))
 
         # getting the 2D density of selection and mean for the plots
-        print("df4 density")
         df_4$density =  get_density(df_4$Mean, df_4$gene.feature, n = 100) # problem here: df_4 is empty!!!! 
-        print("p_denst")
-        
+
         
         # Selection rank vs mean expression rank for both young and old for the Lung Pneumocyte cell type
         p_denst[[i]] = ggplot(df_4) +
@@ -190,5 +189,4 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
     }  # loop on explanatory features 
   }  # if figure 2
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
-  
 }
