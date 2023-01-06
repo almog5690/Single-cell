@@ -109,8 +109,11 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
           names(cur.gene.ind) = toupper(names(cur.gene.ind))
           cur.gene.ind = cur.gene.ind[cur_gene_name[[feature.type]]]
           gene.mean.by.age.group[age.group] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
-          DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), paste0(feature.type, "_", age.group, "_cor"))] <- 
-            cor.test(gene.mean.by.age.group[[age.group]][cur.gene.ind], cur_gene_features[[feature.type]][cur.gene.ind], use = "complete.obs", method = "spearman")[3:4]
+          DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
+                                  paste0(feature.type, "_", age.group, "_cor"))] <- 
+            cor.test(gene.mean.by.age.group[[age.group]][cur.gene.ind], 
+                     cur_gene_features[[feature.type]][cur.gene.ind], 
+                     use = "complete.obs", method = "spearman")[3:4]
         }
         
         # 2. Fold-change       

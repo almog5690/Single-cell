@@ -109,7 +109,7 @@ if(mean.figures)
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
 }
 
-if(mean.figures)
+if(var.figures)
 {
   DF_cor = dra_var_figures(data.type)
 }
