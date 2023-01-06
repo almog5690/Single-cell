@@ -64,7 +64,7 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
     #    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     #    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
     SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
-    if(length(SC_gene_name) != dim(counts.mat)[1]) { # For rats, names are already in the matrix
+    if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
       SC_gene_name = toupper(rownames(counts.mat)) 
     } 
     rownames(counts.mat) = SC_gene_name # make sure upper 

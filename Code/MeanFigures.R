@@ -13,6 +13,7 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
   n.datas <- length(data.types)
   p_feature_vs_mean_bar <- DF_cors <- vector("list", n.datas)
   for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
+    set_data_dirs(data.types[i])
     mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.types[i], # '.RData') 
                                     ".", paste0( feature.types, collapse="_"), '.RData') # should include also features 
     load(mean.analysis.outfile)
@@ -49,7 +50,8 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
       multi.plot <- ggarrange(plotlist = p_feature_vs_mean_bar, nrow = 1, ncol = n.datas) # all in the same row 
       annotate_figure(multi.plot, top = text_grob(paste0("Mean ", group.str, " vs. ", feature.type, " correlation across all cell types"), 
                                                   color = "black", face = "bold", size = 14))
-      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
+      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"), 
+                    '.', feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
     }    
   }  
   
@@ -78,6 +80,7 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
         DF_cors[[i]]$y.plot <- unlist(DF_cors[[i]][cor.old.col])
         textdf <- DF_cors[[i]][highlight_cell, ]
         
+        print("p3")
         # mean expression vs. selection correlation coefficients for both old and young
         p3[[i]] = ggplot(DF_cors[[i]], aes(x.plot, y.plot)) + 
           geom_point(color = "blue") + 
@@ -89,16 +92,27 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
 
         ## highlighted cell (Lung Pneumocyte cell) type Mean vs selection for both age groups
         tissue.ind = which(samples$organs == tissue) # Lung index
-        cell_types_categories = meta.data[[tissue.ind]]$cell_ontology_class # the names of the different cell-types
+        if(data.type == "CR.Rat"){ # Convert to dummy variables 
+          cell_types_categories = levels(SC$cell_types)
+        } else
+            cell_types_categories = meta.data[[i]]$cell_ontology_class  # the names of the different cell-types
         k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
+        print("Read SC")
         
         SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[[i]]], ".rds")) # Current (Lung) tissue seurat object
         list2env(tissue_to_age_inds(data.types[[i]], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
         counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lng tissue
         SC_gene_name = toupper(rownames(SC)) # genes names in upper case letters
-        rownames(counts.mat) = SC_gene_name 
-        cell_types = SC@meta.data$cell.ontology.class # Cell types vector
-        
+        if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
+          SC_gene_name = toupper(rownames(counts.mat)) 
+        } 
+        rownames(counts.mat) = SC_gene_name # make sure upper 
+
+        if(data.type == "CR.Rat"){ # Convert to dummy variables 
+          cell_types = as.numeric(SC@meta.data$cell_types) # Cell types vector
+        } else
+          cell_types = SC@meta.data$cell.ontology.class # Cell types vector
+
         gene_feat = gene_features[[feature.type]][gene_name %in% (SC_gene_name)] # filtering the selection score to genes that are found in the current tissue
         cur_gene_name = gene_name[gene_name %in% (SC_gene_name )] # the names of the filtered genes
         
@@ -136,15 +150,19 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
         mean_old_rank = rank(gene_mean_old[names(g)],ties.method = "average")
         
         # data frame contains old and young genes mean expression and selection ranks for the plots
+        print("df4")
         df_4 = data.frame("Mean" = c(mean_old_rank,mean_young_rank),
                           "gene.feature" = c(selc_rank, selc_rank),
                           "Age" = rep(c("Old","Young"),each = length(selc_rank)))
+        print("age names")
         # Should replace this with actual computed correlation. No need for p-value
         age_name = c("Old" = paste0("Old: ","\u03c1","=0.18"), # ,p<2.2e-16"),
                      "Young" = paste0("Young: ","\u03c1","=0.21")) # ,p<2.2e-16"))
         
         # getting the 2D density of selection and mean for the plots
+        print("df4 density")
         df_4$density =  get_density(df_4$Mean, df_4$gene.feature, n = 100) # problem here: df_4 is empty!!!! 
+        print("p_denst")
         
         # Selection rank vs mean expression rank for both young and old for the Lung Pneumocyte cell type
         p_denst[[i]] = ggplot(df_4) +
@@ -163,7 +181,8 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
       multi.plot <- ggarrange(plotlist = c(rbind(p_denst, p3)), nrow = 2, ncol = n.datas) # all in the same row 
       annotate_figure(multi.plot, top = text_grob(paste0("Genes ", feature.type, " and mean correlation"), 
                                                   color = "black", face = "bold", size = 14))
-      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
+      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
+                    '.',  feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
     }  # loop on explanatory features 
   }  # if figure 2
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
