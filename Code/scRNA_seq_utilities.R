@@ -2,6 +2,7 @@
 library(readxl)
 
 
+# Set directories for raw and processed data, gene features data, analysis results, figures .. for a given data type 
 set_data_dirs <- function(data.type)
 {
   # Set globally: 
@@ -14,16 +15,13 @@ set_data_dirs <- function(data.type)
   analysis.figures.dir <<- paste0(analysis.results.dir, 'Figures/')  # For analysis figures   
   basics.dir <<- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
   
-  # Return all in a list 
+  # Return all in a list? or just keep them as updated global variables  
 }
 
 # Get tissues. Use the processed files if they exist (otherwise need to go back to raw files?)
 get_tissue_file_names <- function(data.type)
 {
   # loading the meta data names for the droplet technology
-  # load("meta.data.drop.Rdata")
-  # load("facs.files.RData")
-  # load("meta.data.facs.RData")
   if(data.type == "TM.droplet")
   {
     load(paste0(processed.data.dir, "/meta.data.drop.RData"))
@@ -50,7 +48,7 @@ get_tissue_file_names <- function(data.type)
 }
 
 
-# Filter cells from an expression matrix
+# Filter cells from an expression matrix (not used yet. Should be part of analysis)
 filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 {
   n_cell_types = max(cell_types) # Number of cell types
@@ -70,7 +68,7 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 }
 
 
-# Read feature files
+# Read feature files (not used yet. NEXT ONE!!! )
 # Output will be a list with names being the genes, and values being numerical values.
 # Gene names are according to Ensembl (???)
 read_gene_features  <- function(feature.names)
@@ -130,9 +128,24 @@ read_gene_features  <- function(feature.names)
 # for a given tissue/cell type
 # cell.types - which ones. Default: all types in a given tissue
 # expression.stats - which expression statistics to extract 
-# Need both organ and seurat output (it doesn't contain the organ/tissue)
-extract_expression_features <- function(data.type, expression.stats = c("mean"), organ, SeuratOutput=c(), cell.types=c())
+# Need both organ and Seurat output (it doesn't contain the organ/tissue)
+# Take list of data frames for all cell types  
+extract_expression_statistics <- function(data.type, expression.stats = c("mean", "overdispersion"), 
+                                          organ, SeuratOutput=c(), cell.types=c(), force.rerun = FALSE)
 {
+  
+  set_data_dirs(data.type)
+  expression.statistics.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.', 
+                                  paste0( feature.types, collapse="_"), '.RData')
+  samples <- get_tissue_file_names(data.type)
+  meta.data = get_meta_data(data.type)
+  if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
+  {
+    load(mean.analysis.outfile)
+    return(DF_cor)
+  }
+  
+  
   # First load data if not loaded already 
   if(length(SeuratOutput)==0) # empty
     SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
