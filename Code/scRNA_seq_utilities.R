@@ -136,41 +136,49 @@ extract_expression_statistics <- function(data.type, expression.stats = c("mean"
   
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.', 
-                                  paste0( feature.types, collapse="_"), '.RData')
+                                          paste0( feature.types, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
   meta.data = get_meta_data(data.type)
+  
+  
   if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
   {
-    load(mean.analysis.outfile)
-    return(DF_cor)
+    load(expression.statistics.outfile)
+    return(DF.expr.stats)
   }
+  n.cell.types <- length(cell_types)  # number of cell types in tissue
+  DF.expr.stats <- list() # list of data-frames, one for each cell type 
   
   
-  # First load data if not loaded already 
-  if(length(SeuratOutput)==0) # empty
-    SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
-  counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-  
-  # For overdispersion read DVT files if they exist/run basics  
-  
-  
-  # Next, extract mean
-  for(stat in expression.stats)
+  for(cell_type in cell_types)  # First load data if not loaded already 
   {
-    if(stat == "mean")
+    
+    if(length(SeuratOutput)==0) # empty
+      SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+    counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
+
+    
+    # For overdispersion read DVT files if they exist/run basics  
+    
+    
+    # Next, extract mean
+    DF.expr.stats[[cell_type]] <- matrix(0 ,nrow = n.genes, ncol = )
+    for(stat in expression.stats)
     {
-      # Repear for all age groups and features 
-      gene.mean.by.age.group[age.group] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
-      
+      if(stat == "mean")
+      {
+        # Repear for all age groups and features 
+        DF.expr.stats[[cell_type]][, stat] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+      }
+      if(stat == "overdispersion")
+      {
+        DF.expr.stats[[cell_type]][, stat] <- overrdispersion(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+      }
     }
-    if(stat == "overdispersion")
-    {
-      
-    }
-  }
-  
+    
+  } # end loop on cell types
 }
-  
+
 
 # Computing density for plotting
 get_density <- function(x, y, ...) { # function for figures 4 and 5
@@ -241,6 +249,6 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
   test_file = paste0(basics.dir, paste(paste0("DVT/",data.type,"/DVT"), tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
   old_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$old_str), ".Rds")     # Old Markov chain file name
   young_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$young_str), ".Rds")     # Young Markov chain file name
-
+  
   return(list(test=test_file, old=old_file, young=young_file))
 }
