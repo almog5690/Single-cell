@@ -101,7 +101,8 @@ if(mean.figures)
   for (fig.num in c(1,2,11,111))
     draw_mean_figures(c("TM.facs", "TM.droplet"), fig.num, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 #  draw_mean_figures(c("CR.Rat"), 1, feature.types = c("selection", "gene.len")) 
-  draw_mean_figures(c("CR.Rat"), 2, feature.types = feature.types, # c("selection", "gene.len"), 
+  for (fig.num in c(1,2,11,111))
+    draw_mean_figures(c("CR.Rat"), fig.num, feature.types = feature.types, # c("selection", "gene.len"), 
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
 }
 

@@ -71,8 +71,16 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 # Read feature files (not used yet. NEXT ONE!!! )
 # Output will be a list with names being the genes, and values being numerical values.
 # Gene names are according to Ensembl (???)
-read_gene_features  <- function(feature.names)
+read_gene_features  <- function(feature.names, force.rerun = FALSE)
 {
+  gene.features.outfile <- paste0(main.data.dir, 'Data/', 'gene.features.', 
+                                          paste0( feature.names, collapse="_"), '.RData')
+  if(file.exists(gene.features.outfile) & (force.rerun==FALSE))
+  {
+    load(gene.features.outfile)
+    return(gv)
+  }
+  
   n.features <- length(feature.names)
   gv <- vector("list", n.features)
   names(gv) <- feature.names
@@ -119,6 +127,7 @@ read_gene_features  <- function(feature.names)
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1
   }  
+  save(gv, file=gene.features.outfile)   # Save dataframe to file ( Save also to excel? ) 
   return(gv)
 }
 
@@ -126,23 +135,26 @@ read_gene_features  <- function(feature.names)
 
 # Compute features of expression (mean, overdispersion, variance ... )
 # for a given tissue/cell type
+# organ - what tissues
 # cell.types - which ones. Default: all types in a given tissue
 # expression.stats - which expression statistics to extract 
+# age.groups - compute for each group separately
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)
 # Take list of data frames for all cell types  
-extract_expression_statistics <- function(data.type, expression.stats = c("mean", "overdispersion"), 
-                                          organ, SeuratOutput=c(), cell.types=c(), force.rerun = FALSE)
+extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
+                                          age.groups = c("young", "old", "all"), SeuratOutput=c(), force.rerun = FALSE)
 {
-  
   set_data_dirs(data.type)
-  expression.statistics.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.type, '.', 
-                                          paste0( feature.types, collapse="_"), '.RData')
+  expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', 
+                                          paste0( expression.stats, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
   meta.data = get_meta_data(data.type)
   n.stats = length(expression.stats)
   
-  if(file.exists(mean.analysis.outfile) & (force.rerun==FALSE))
+  if(file.exists(expression.statistics.outfile) & (force.rerun==FALSE))
   {
+    print("Loading file!")
+    print(expression.statistics.outfile)
     load(expression.statistics.outfile)
     return(DF.expr.stats)
   }
@@ -152,6 +164,9 @@ extract_expression_statistics <- function(data.type, expression.stats = c("mean"
   
   for(cell.type in cell_types)  # First load data if not loaded already 
   {
+    print("Load cell type, file name:")
+    print(cell.type)
+    print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
     if(length(SeuratOutput)==0) # empty, on first time the loop runs 
       SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
@@ -161,10 +176,11 @@ extract_expression_statistics <- function(data.type, expression.stats = c("mean"
     {
       basics.file <- dataset_to_BASiCS_file_names(data.type, organ, cell.type) # Load BASiCS results
       load(BASiCS.files$test)
-#      BASiCSOutput 
     }
     
     # Next, extract mean
+    print("Extract mean:")
+    
     DF.expr.stats[[cell.type]] <- matrix(0 ,nrow = n.genes, ncol = n.stats)
     for(stat in expression.stats)
     {
