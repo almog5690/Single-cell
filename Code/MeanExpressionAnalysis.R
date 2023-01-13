@@ -55,7 +55,10 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
   cell.type.ctr <- 1
   for(i in 1:length(samples$organs)){  #
-    read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
+    # New: use utility to extract statistics: 
+    mean.by.cell.type.and.age <- extract_expression_statistics(data.type, samples$organs[i], expression.stats = c("mean")) # extract means
+
+        read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     SC = readRDS(file = read.file) # Current tissue seurat object
     counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
@@ -91,8 +94,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
       cur_gene_name[[feature.type]] = gene_name[[feature.type]][gene_name[[feature.type]] %in% (SC_gene_name)] # the names of the filtered genes in this tissue
       #      cur_counts.mat <- counts.mat[cur_gene_name,] # Take only relevant genes
     }
-    # New: use utility to extract statistics: 
-    mean.by.cell.type.and.age <- extract_expression_statistics(data.type, samples$organs[i], expression.stats = c("mean")) # extract means
     for(k in cells_ind){ # loop on cell types . 
       print(paste0("Analyze cell type: ", cell_types_categories[k]))
       for(feature.type in feature.types)
@@ -101,7 +102,6 @@ mean_expression_analysis <- function(data.type, feature.types = c("selection"), 
         gene.mean.by.age.group <- data.frame(matrix(ncol = 3, nrow = length(cur_gene_name[[feature.type]])))
         colnames(gene.mean.by.age.group) <- c("all", "young", "old")
 
-        
         for(age.group in colnames(gene.mean.by.age.group))
         {
           cur.ind = switch(age.group, # Indices of cells in each group

@@ -74,7 +74,7 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 read_gene_features  <- function(feature.names, force.rerun = FALSE)
 {
   gene.features.outfile <- paste0(main.data.dir, 'Data/', 'gene.features.', 
-                                          paste0( feature.names, collapse="_"), '.RData')
+                                  paste0( feature.names, collapse="_"), '.RData')
   if(file.exists(gene.features.outfile) & (force.rerun==FALSE))
   {
     load(gene.features.outfile)
@@ -142,13 +142,15 @@ read_gene_features  <- function(feature.names, force.rerun = FALSE)
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)
 # Take list of data frames for all cell types  
 extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
-                                          age.groups = c("young", "old", "all"), SeuratOutput=c(), force.rerun = FALSE)
+                                          age.groups = c("young", "old", "all"), SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
 {
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', 
                                           paste0( expression.stats, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
+  organ.ind = which(samples$organs == organ)
   meta.data = get_meta_data(data.type)
+  groups = dataset_to_age_groups(data.type)
   n.stats = length(expression.stats)
   
   if(file.exists(expression.statistics.outfile) & (force.rerun==FALSE))
@@ -162,15 +164,45 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   DF.expr.stats <- list() # list of data-frames, one for each cell type 
   
   
-  for(cell.type in cell_types)  # First load data if not loaded already 
+  # get statistics names 
+  stats.col.names <- c()
+  for(stat in expression.stats)
+    for(age.group in age.groups)  # loop on age groups
+      stats.col.names <- c(stats.col.names, paste0(stat, "_", age.group))
+  print("Col names:")
+  print(stats.col.names)
+
+  print("Load tissue, file name:")
+  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
+  if(length(SeuratOutput)==0) # empty, on first time the loop runs 
+    SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+  print("List:")
+  list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+  print("Losted!!")
+  counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
+  n.genes <- dim(counts.mat)[1]  # same number of genes for all cell types (could have many NAs)
+  n.cells <- dim(counts.mat)[2]
+  n.groups <- length(age.groups)
+  
+  if(data.type == "CR.Rat"){ # Convert to dummy variables 
+    cell_types = as.numeric(SeuratOutput@meta.data$cell_types) # Cell types vector
+    cell_types_categories = levels(SeuratOutput$cell_types)
+  } else
   {
+    cell_types = SeuratOutput@meta.data$cell.ontology.class # Cell types vector
+    cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+  }
+  cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)  #  unique(cell_types)+1 # NO FILTERING NOW !!!
+  n.cell.types <- length(cells_ind)
+  
+  
+  
+  for(cell.type in cells_ind)  # First load data if not loaded already 
+  {
+    DF.expr.stats[[cell.type]] <- matrix(0 ,nrow = n.genes, ncol = n.stats*n.groups)
+    colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
     print("Load cell type, file name:")
     print(cell.type)
-    print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
-    if(length(SeuratOutput)==0) # empty, on first time the loop runs 
-      SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
-    counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-
     
     if(("overdispersion" %in% expression.stats) & (length(BASiCSOutput) == 0)) # For overdispersion read DVT files if they exist/run basics  
     {
@@ -178,25 +210,37 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       load(BASiCS.files$test)
     }
     
-    # Next, extract mean
-    print("Extract mean:")
-    
-    DF.expr.stats[[cell.type]] <- matrix(0 ,nrow = n.genes, ncol = n.stats)
-    for(stat in expression.stats)
+    for(age.group in age.groups)  # loop on age groups
     {
-      if(stat == "mean")
+      cur.cell.ind = switch(age.group, # Indices of cells in each group
+                       "all" = all.ind, 
+                       "young" = young.ind, 
+                       "old" = old.ind)  & (cell_types==cell.type-1) # take only cell type 
+      cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[,cur.cell.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
+      names(cur.gene.ind) = toupper(names(cur.gene.ind))
+      
+      
+      
+      # Next, extract mean
+      print("Extract mean:")
+      
+      for(stat in expression.stats)
       {
-        # Repear for all age groups and features 
-        DF.expr.stats[[cell.type]][, stat] <- rowMeans(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+        if(stat == "mean")
+        {
+          # Repeat for all age groups and features 
+          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
+        }
+        if(stat == "overdispersion")
+        {
+          # Run BASiCS 
+          DF.expr.stats[[cell.type]][, stat] <- overrdispersion(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
+        }
       }
-      if(stat == "overdispersion")
-      {
-        # Run BASiCS 
-        DF.expr.stats[[cell.type]][, stat] <- overrdispersion(counts.mat[cur_gene_name[[feature.type]], cur.ind])  # Take only filtered cells
-      }
-    }
-    
+    } # end loop on age groups    
   } # end loop on cell types
+  
+  return(DF.expr.stats)
 }
 
 
@@ -258,6 +302,8 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
   all.ind = rep(TRUE, n_cell)
   return(list(young.ind=young.ind, old.ind=old.ind, all.ind=all.ind))
 }
+
+
 
 
 # Getting file names for reading BASiCS results 
