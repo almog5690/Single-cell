@@ -71,7 +71,8 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 # Read feature files (not used yet. NEXT ONE!!! )
 # Output will be a list with names being the genes, and values being numerical values.
 # Gene names are according to Ensembl (???)
-read_gene_features  <- function(feature.names, force.rerun = FALSE)
+# organism - allow multiple ones in the future (currently only mice supported)
+read_gene_features  <- function(feature.names, organism = "mice", force.rerun = FALSE)
 {
   gene.features.outfile <- paste0(main.data.dir, 'Data/', 'gene.features.', 
                                   paste0( feature.names, collapse="_"), '.RData')
@@ -142,7 +143,7 @@ read_gene_features  <- function(feature.names, force.rerun = FALSE)
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)
 # Take list of data frames for all cell types  
 extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
-                                          age.groups = c("young", "old", "all"), SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
+                                          age.groups = c("young", "old", "all", "fc"), SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
 {
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', organ, '.',
@@ -155,10 +156,10 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   if(file.exists(expression.statistics.outfile) & (force.rerun==FALSE))
   {
-    print("Loading file!")
-    print(expression.statistics.outfile)
+#    print("Loading file!")
+#    print(expression.statistics.outfile)
     load(expression.statistics.outfile)
-    return(DF.expr.stats)
+    return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
   }
   DF.expr.stats <- list() # list of data-frames, one for each cell type 
   
@@ -170,14 +171,14 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   stats.col.names <- c(stats.col.names, "filter") # names of genes filtered 
   if("overdispersion" %in% expression.stats) # For overdispersion read DVT files if they exist/run basics  
   {
-    stats.col.names <- c(stats.col.names, "overdispersion_fc")
+#    stats.col.names <- c(stats.col.names, "overdispersion_fc")
     stats.col.names <- c(stats.col.names, "overdispersion_diff")
   }
   print("Col names:")
   print(stats.col.names)
 
-  print("Load tissue, file name:")
-  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
+#  print("Load tissue, file name:")
+#  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
   if(length(SeuratOutput)==0) # empty, on first time the loop runs 
     SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
   list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
@@ -212,7 +213,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
 #      env_list <- as.list(temp_env)
 #      print(names(env_list))
       
-      print("Loaded BASiCS file to test variable")
+#      print("Loaded BASiCS file to test variable")
       # Extract overdispersion features !!! 
       df.od = test@Results$Disp@Table
       df.od$GeneName = toupper(df.od$GeneName) # Uppercasing gene names
@@ -224,8 +225,11 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       cur.cell.ind = switch(age.group, # Indices of cells in each group
                        "all" = all.ind, 
                        "young" = young.ind, 
-                       "old" = old.ind)  & (cell_types==cell.type-1) # take only cell type 
+                       "old" = old.ind, 
+                       "fc" = young.ind)  & (cell_types==cell.type-1) # take only cell type 
       cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, cur.cell.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
+      if(age.group == "fc")  #union young or old 
+        cur.gene.ind = union(cur.gene.ind, rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )  
       names(cur.gene.ind) = toupper(names(cur.gene.ind))
       
       # Next, extract different statistics 
@@ -233,16 +237,23 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       {
         if(stat == "mean")
         {
-          # Repeat for all age groups and features 
-          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
+          if(age.group == "fc")  #union young or old 
+            DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( 
+              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] / 
+                DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")]) # Take only filtered cells. why? 
+          else
+            # Repeat for all age groups and features 
+            DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
         }
         if(stat == "overdispersion")
         {
           od.str = switch(age.group, 
                           "all" = "DispOverall", 
                           "old" = "Disp1", 
-                          "young" = "Disp2")
-          print("Run/Read overdispersion!!!! ")
+                          "young" = "Disp2", 
+                          "fc" = "DispFC")
+          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]
+#          print("Run/Read overdispersion!!!! ")
         }
       }
     } # end loop on age groups    
@@ -252,13 +263,14 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
     # Add special expression features of overdispersion 
     if(stat %in% "overdispersion")
     {
-      DF.expr.stats[[cell.type]][df.od$GeneName, paste0(stat, "_fc")] <- df.od[, "DispFC"]  # Take only filtered cells
+#      DF.expr.stats[[cell.type]][df.od$GeneName, paste0(stat, "_fc")] <- df.od[, "DispFC"]  # Take only filtered cells
       DF.expr.stats[[cell.type]][df.od$GeneName, paste0(stat, "_diff")] <- df.od[, "ResultDiffDisp"]  # Take only filtered cells
     }
   } # end loop on cell types
   
-  save(DF.expr.stats, file=expression.statistics.outfile) # Save results !!! 
-  return(DF.expr.stats)
+  save(DF.expr.stats, cell_types_categories, cells_ind, file=expression.statistics.outfile) # Save results !!! 
+  
+  return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
 }
 
 
@@ -326,7 +338,7 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
 # cell.type - string representing cell 
 dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 {
-  print("Start get BASiCS names")
+#  print("Start get BASiCS names")
   groups = dataset_to_age_groups(data.type)
   # Read cell type categories 
   RData_finish = ifelse(data.type == "TM.droplet", "drop 3-24 same-mean.RData","same-mean.RData")
@@ -334,7 +346,7 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
   test_file = paste0(basics.dir, paste(paste0("DVT/",data.type,"/DVT"), tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
   old_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$old_str), ".Rds")     # Old Markov chain file name
   young_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$young_str), ".Rds")     # Young Markov chain file name
-  print("End get BASiCS names")
+#  print("End get BASiCS names")
   
   return(list(test=test_file, old=old_file, young=young_file))
 }

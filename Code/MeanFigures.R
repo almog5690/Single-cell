@@ -188,5 +188,11 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
                     '.',  feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
     }  # loop on explanatory features 
   }  # if figure 2
+  
+  if(fig.num == 99)  # New: draw heatmap of correlations of all gene features. Need to compute all pairwise correlations across tissues and cell types 
+  {
+    
+  }
+  
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
 }
