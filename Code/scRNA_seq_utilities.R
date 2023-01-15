@@ -197,18 +197,12 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)  #  unique(cell_types)+1 # NO FILTERING NOW !!!
   n.cell.types <- length(cells_ind) # number of cell types in tissue
   
-  print("Inside read expression stats, cells_ind:")
-  print(cells_ind)
-  
-  
   for(cell.type in cells_ind)  # First load data if not loaded already 
   {
     DF.expr.stats[[cell.type]] <- matrix(-999 ,nrow = n.genes, ncol = length(stats.col.names)) # n.stats*n.groups+1) # Set negatives 
     colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
     rownames(DF.expr.stats[[cell.type]]) <- toupper(rownames(SeuratOutput@assays$RNA@data))
-    print("Load cell type, file name:")
-    print(cell.type)
-    
+
     if(("overdispersion" %in% expression.stats) & (length(BASiCSOutput) == 0)) # For overdispersion read DVT files if they exist/run basics  
     {
       BASiCS.files <- dataset_to_BASiCS_file_names(data.type, organ, cell_types_categories[cell.type]) # Load BASiCS results
@@ -254,13 +248,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
     } # end loop on age groups    
     
     # Add filtering information (global, not specific for age group or expression statistic. May need to change!! )
-    print("Add filtering!!")
-    print(length(cur.gene.ind))
-    print(sum(cur.gene.ind))
-    print( length(DF.expr.stats[[cell.type]][which(cur.gene.ind), "filter"] )   )
-    print( length(DF.expr.stats[[cell.type]][, "filter"] )   )
     DF.expr.stats[[cell.type]][, "filter"] <- cur.gene.ind  # Take only filtered cells
-    print("Add special!!")
     # Add special expression features of overdispersion 
     if(stat %in% "overdispersion")
     {

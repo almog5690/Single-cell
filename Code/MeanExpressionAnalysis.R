@@ -57,39 +57,41 @@ mean_expression_analysis <- function(data.type, expression.stat.y = c("overdispe
   cell.type.ctr <- 1
   for(i in 1:length(samples$organs)){  #
     # New: use utility to extract statistics: 
-    print(paste0("Read expression stats ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     expression.features.by.cell.type.and.age <- extract_expression_statistics(data.type, samples$organs[i], 
                                                                               expression.stats = c("mean"), SeuratOutput=c()) # extract means
 
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
-    SC = readRDS(file = read.file) # Current tissue seurat object
-    counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-    list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+#    SC = readRDS(file = read.file) # Current tissue seurat object
+#    counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
+#    list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
     
     #    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     #    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
-    SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
-    if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
-      SC_gene_name = toupper(rownames(counts.mat)) 
-    } 
-    rownames(counts.mat) = SC_gene_name # make sure upper 
+#    SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
+#    if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
+#      SC_gene_name = toupper(rownames(counts.mat)) 
+#    } 
+#    rownames(counts.mat) = SC_gene_name # make sure upper 
     
-    if(data.type == "CR.Rat"){ # Convert to dummy variables 
-      cell_types = as.numeric(SC@meta.data$cell_types) # Cell types vector
-      cell_types_categories = levels(SC$cell_types)
-    } else
-    {
-      cell_types = SC@meta.data$cell.ontology.class # Cell types vector
-      cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
-    }
+#    if(data.type == "CR.Rat"){ # Convert to dummy variables 
+#      cell_types = as.numeric(SC@meta.data$cell_types) # Cell types vector
+#      cell_types_categories = levels(SC$cell_types)
+#    } else
+#    {
+#      cell_types = SC@meta.data$cell.ontology.class # Cell types vector
+#      cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+#    }
     
-    cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
+#    cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)
+    cells_ind = which(!unlist(lapply(expression.features.by.cell.type.and.age, is.null)))
     
     cur_gene_features <- vector("list", n.features)
     cur_gene_name <- vector("list", n.features)  # genes that both have the feature and are present in the sc-RNA-seq data of the tissue
     names(cur_gene_features) <- feature.types
     names(cur_gene_name) <- feature.types
+    
+    
     
     for(feature.type in feature.types)
     {
@@ -99,6 +101,9 @@ mean_expression_analysis <- function(data.type, expression.stat.y = c("overdispe
     }
     print("Cells inds:")
     print(cells_ind)
+    print("Length expression list:")
+    print(length(expression.features.by.cell.type.and.age))
+    
     for(k in cells_ind){ # loop on cell types . 
       print(paste0("Analyze cell type: ", cell_types_categories[k]))
       for(feature.type in feature.types)
@@ -141,19 +146,19 @@ mean_expression_analysis <- function(data.type, expression.stat.y = c("overdispe
           print(length(expression.features.by.cell.type.and.age))
           cur.gene.ind <- expression.features.by.cell.type.and.age[[k]][, paste0("mean_", age.group)] > -1  # Set current gene inds 
           
-          print("cur.gene.ind: ")
-          print(sum(cur.gene.ind))
+#          print("cur.gene.ind: ")
+#          print(sum(cur.gene.ind))
           DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
                                   paste0(feature.type, "_", age.group, "_cor"))] <- 
             cor.test(expression.features.by.cell.type.and.age[[k]][which(cur.gene.ind), paste0("mean_", age.group)], 
                      cur_gene_features[[feature.type]][cur.gene.ind], 
                      use = "complete.obs", method = "spearman")[3:4]
           
-          print("Computed cor ")
+#          print("Computed cor ")
           
         }
         
-        print("Finished Age groups")
+#        print("Finished Age groups")
         # 2. Fold-change       
         # Filtering genes with low expression for old AND for young (less than 10 counts)
 #        fc.gene.ind = rowSums(SC@assays$RNA@counts[,(cell_types==k-1)&young.ind]) > filter.params$min.count |
