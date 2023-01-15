@@ -3,7 +3,7 @@ library(BASiCS)
 
 # General function for overdispersion analysis for all data types 
 overdispersion_analysis <- function(data.type, force.rerun = FALSE, attribute = "selection") {
-  disp.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.analysis.', data.type, '.RData')
+  disp.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.analysis.', data.type, '.RData')  # Analysis vs. age?
   disp.selc.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.selection.analysis.', data.type, '.RData')
   disp.len.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.length.analysis.', data.type, '.RData') # separate files for each feature -> change to one file
   
@@ -95,11 +95,11 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE, attribute = 
     
     for(k in cells_ind){
       BASiCS.files <- dataset_to_BASiCS_file_names(data.type)
-      if(!file.exists(BASiCS.files$test)){ # Checking if the file exist
+      if(file.exists(BASiCS.files$test)){ # Checking if the file exist
         load(BASiCS.files$test)
       } else {
         if(!(file.exists(BASiCS.files$old) & file.exists(BASiCS.files$young))) next() # Checking if both old and young Markov chain files exist.
-        # Loading Marov-chain files
+        # Loading Markov-chain files
         chain_old = BASiCS_LoadChain(RunName = BASiCS.files$old)
         chain_young = BASiCS_LoadChain(RunName = BASiCS.files$young)
         
