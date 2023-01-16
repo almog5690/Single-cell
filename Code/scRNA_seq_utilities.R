@@ -174,8 +174,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
 #    stats.col.names <- c(stats.col.names, "overdispersion_fc")
     stats.col.names <- c(stats.col.names, "overdispersion_diff")
   }
-  print("Col names:")
-  print(stats.col.names)
+#  print("Col names:")
+#  print(stats.col.names)
 
 #  print("Load tissue, file name:")
 #  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
@@ -200,20 +200,18 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   for(cell.type in cells_ind)  # First load data if not loaded already 
   {
-    DF.expr.stats[[cell.type]] <- matrix(-999 ,nrow = n.genes, ncol = length(stats.col.names)) # n.stats*n.groups+1) # Set negatives 
+    DF.expr.stats[[cell.type]] <- as.data.frame(matrix(-999 ,nrow = n.genes, ncol = length(stats.col.names))) # n.stats*n.groups+1) # Set negatives 
+#    print("Dim DF.expr.stats first:")
+#    print( dim(DF.expr.stats[[cell.type]])  )
     colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
     rownames(DF.expr.stats[[cell.type]]) <- toupper(rownames(SeuratOutput@assays$RNA@data))
 
     if(("overdispersion" %in% expression.stats) & (length(BASiCSOutput) == 0)) # For overdispersion read DVT files if they exist/run basics  
     {
       BASiCS.files <- dataset_to_BASiCS_file_names(data.type, organ, cell_types_categories[cell.type]) # Load BASiCS results
-      print("Load BASiCS file:")
-      print(BASiCS.files)
-      load(BASiCS.files$test) # ,  temp_env <- new.env())  # one variable called 'test'
-#      env_list <- as.list(temp_env)
-#      print(names(env_list))
-      
-#      print("Loaded BASiCS file to test variable")
+      print(paste0("Load BASiCS file: ", (BASiCS.files[[1]])))
+      load(BASiCS.files$test) # ,  temp_env <- new.env())  # one variable called 'test' #      env_list <- as.list(temp_env)
+
       # Extract overdispersion features !!! 
       df.od = test@Results$Disp@Table
       df.od$GeneName = toupper(df.od$GeneName) # Uppercasing gene names
@@ -229,14 +227,16 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                        "fc" = young.ind)  & (cell_types==cell.type-1) # take only cell type 
       cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, cur.cell.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
       if(age.group == "fc")  #union young or old 
-        cur.gene.ind = union(cur.gene.ind, rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )  
+        cur.gene.ind = cur.gene.ind |(rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )
       names(cur.gene.ind) = toupper(names(cur.gene.ind))
-      
+
       # Next, extract different statistics 
       for(stat in expression.stats)
       {
         if(stat == "mean")
         {
+#          print(paste0("length old:", length( DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] )))
+
           if(age.group == "fc")  #union young or old 
             DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( 
               DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] / 
@@ -247,13 +247,30 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
         }
         if(stat == "overdispersion")
         {
+#          print(paste0("Extract overdispersion: ", age.group))
           od.str = switch(age.group, 
                           "all" = "DispOverall", 
                           "old" = "Disp1", 
                           "young" = "Disp2", 
                           "fc" = "DispFC")
+          
+#          print("Size df.od:")
+#          print(dim(df.od))
+#          print(paste0("cur.gene.ind: ", length(cur.gene.ind), sum(cur.gene.ind)))
+#          print(paste0("cell.type: ", cell.type, ", len DF: ", length(DF.expr.stats)))
+#          ccc <- df.od[cur.gene.ind, od.str]
+#          print("CCC:")
+#          print(ccc)
+#          print("len ccc ")
+#          print(length(ccc))
+#          print("Dim DF.expr.stats:")
+#          print( dim(DF.expr.stats[[cell.type]])  )
+#          print("len df.od[cur.gene.ind, od.str]: ")
+#          print(length(df.od[cur.gene.ind, od.str]))
+#          print("len DF.expr.stats[[cell.type]][cur.gene.ind  , ]")
+#          print(length(DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)]))
           DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]
-#          print("Run/Read overdispersion!!!! ")
+#          print("Success Read overdispersion!!!! ")
         }
       }
     } # end loop on age groups    
@@ -262,14 +279,10 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
     DF.expr.stats[[cell.type]][, "filter"] <- cur.gene.ind  # Take only filtered cells
     # Add special expression features of overdispersion 
     if(stat %in% "overdispersion")
-    {
-#      DF.expr.stats[[cell.type]][df.od$GeneName, paste0(stat, "_fc")] <- df.od[, "DispFC"]  # Take only filtered cells
       DF.expr.stats[[cell.type]][df.od$GeneName, paste0(stat, "_diff")] <- df.od[, "ResultDiffDisp"]  # Take only filtered cells
-    }
   } # end loop on cell types
   
   save(DF.expr.stats, cell_types_categories, cells_ind, file=expression.statistics.outfile) # Save results !!! 
-  
   return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
 }
 

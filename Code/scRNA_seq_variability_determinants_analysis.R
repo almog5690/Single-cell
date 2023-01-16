@@ -60,7 +60,7 @@ filter.params$min.cells.per.age <- 20
 # Include all needed source files 
 source("scRNA_seq_utilities.R")
 source("scRNA_seq_preprocess.R")
-source("MeanExpressionAnalysis.R") 
+source("ExpressionRegressionAnalysis.R") 
 source("OverdispersionAnalysis.R")
 source("BASiCSAnalysis.R")
 source("MeanFigures.R")
@@ -85,7 +85,12 @@ if(preprocess)
 if(mean.analysis)
 {
   for(data.type in data.types)
-    DF_cor.drop = mean_expression_analysis(data.type, feature.types = feature.types, force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  {
+    DF_cor_mean = expression_regression_analysis(data.type, feature.types = feature.types, force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+    DF_cor_overdispersion = expression_regression_analysis(data.type, feature.types = feature.types, 
+                                                           expression.stat.y = c("overdispersion"), expression.stat.x = c("mean"), # set y and covariates  
+                                                           force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  }
 #  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = feature.types)  # Should be both droplet and facs in the same function
 #  DF_cor.rat = mean_expression_analysis("CR.Rat", feature.types = c("selection", "gene.len"))  
 }
