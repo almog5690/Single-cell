@@ -8,6 +8,8 @@ library(Seurat)
 # expression.stat.x - independent expression variable in the regression
 # feature.types - gene features variables in the regression
 # force.rerun - compute again, do not read from file 
+# Output: 
+# DF_cor - data-frame with results, also saved to file 
 expression_regression_analysis <- function(data.type, expression.stat.y = c("mean"), # dependent variable
                                      expression.stat.x = c(), feature.types = c("selection"), # covariates
                                      force.rerun = FALSE) {
@@ -59,18 +61,20 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
     col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), paste0(feature.type, "_fc_beta_pval"), 
                                 paste0(feature.type, "_fc_abs_beta"), paste0(feature.type, "_fc_abs_beta_pval")))
   }
-  DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names)))
+  DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names))) # start with empty data-frame. Add cell types that work
   cell.type.ctr <- 1
   expression.stats <- c(expression.stat.y,  expression.stat.x) # load expression statistics
-  for(i in 1:length(samples$organs)){  #
+  for(i in 1:length(samples$organs)){  # SKIN, SCAT, .. Many files in facs couldn't be read. Magin number error (?!) 
     # New: use utility to extract statistics: can be very heavy 
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 
                                                 expression.stats = expression.stats, SeuratOutput=c(), force.rerun = FALSE) # extract means
     
+    
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     cells_ind = which(!unlist(lapply(expr.stats$DF.expr.stats, is.null)))
-    
+    SC_gene_name = toupper( rownames(expr.stats$DF.expr.stats[[cells_ind[1]]]) )
+
     cur_gene_features <- vector("list", n.features)
     cur_gene_name <- vector("list", n.features)  # genes that both have the feature and are present in the sc-RNA-seq data of the tissue
     names(cur_gene_features) <- feature.types
@@ -94,6 +98,11 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
 #          print(paste0("cur.gene.ind: ", length(cur.gene.ind), ", ", sum(cur.gene.ind)))
 #          print("unique:")
 #          print(unique(cur.gene.ind))
+          if(length(which(cur.gene.ind)) == 0)  # no genes, probably bad data
+          {
+#            print(paste0("Skipping age group ", age.group, ", no data!"))
+            next
+          }
 #          print(cur.gene.ind[1:10])
 #          print("NA cells:")
 #          print(which(is.na(cur.gene.ind)))
@@ -110,13 +119,11 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
         # 2. Fold-change       
         # Filtering genes with low expression for old AND for young (less than 10 counts)
         # Mean expression vs. fold-change and selection correlation
-#        print("Compute fc.gene.ind:")
         fc.gene.ind <- (expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_young")] > -1) |
           (expr.stats$DF.expr.stats[[k]][,  paste0(expression.stat.y, "_old")] > -1)# Set current gene inds 
         
-#        print("Compute fold-change:")
-#        print(paste0("length old:", length( expr.stats$DF.expr.stats[[k]][fc.gene.ind,  paste0(expression.stat.y, "_old")] )))
-#        print(paste0("Length features: ", length(cur_gene_features[[feature.type]][fc.gene.ind]   )))
+        if(length(which(fc.gene.ind)) == 0)  # no genes, probably bad data
+          next
         DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_pval"), paste0(feature.type, "_fc_cor"))] <- 
           cor.test(log(expr.stats$DF.expr.stats[[k]][fc.gene.ind,  paste0(expression.stat.y, "_old")] / 
                          expr.stats$DF.expr.stats[[k]][fc.gene.ind,  paste0(expression.stat.y, "_young")]), 
@@ -133,8 +140,14 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
         DF_cor[cell.type.ctr, "Cell_type"] <- expr.stats$cell_types_categories[k]
       } # end loop on feature type
       
+      if(length(which(fc.gene.ind)) == 0)  # no genes, probably bad data
+      {
+        print(paste0("Skipping cell, no data!"))
+        next
+      }
+      
+      
       # Add multiple linear regression with all features together! (for each age group separately!)
-#      print("Get regression features:")
       reg.ctr = 1
       all.features.gene.names <- SC_gene_name  # genes that both appear in the tissue, and have ALL features 
       for(feature.type in feature.types)  # get few in intersection
@@ -149,51 +162,37 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       
       # New: Add possible expression covariates to gene features: 
       
-#      print("Do linear regression:") # Fix also regression: 
       for(age.group in c("all", "young", "old")) # colnames(gene.mean.by.age.group))
       {
-#        cur.ind = switch(age.group, # Indices of cells in each group
-#                         "all" = all.ind, 
-#                         "young" = young.ind, 
-#                         "old" = old.ind)  & (cell_types==k-1) # take only cell type 
-#        cur.gene.ind = rowSums(SC@assays$RNA@counts[,cur.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
-#        names(cur.gene.ind) = toupper(names(cur.gene.ind))
-#        no.features.gene.names = setdiff(names(cur.gene.ind), all.features.gene.names)        
-#        cur.gene.ind[no.features.gene.names] = FALSE # take only genes with features 
-#        
-#        gene.mean.by.age.group.reg <- rowMeans(counts.mat[cur.gene.ind, cur.ind])  # Take only filtered cells
-        
-        # New: get extracted expression features
 
+        # New: get extracted expression features
         cur.gene.ind <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_", age.group)] > -1  # Set current gene inds 
         names(cur.gene.ind) <- rownames(expr.stats$DF.expr.stats[[k]])
 
-        cur_expr_covariates = unlist( lapply(expression.stat.x, paste0, "_", age.group) )
-#        print(paste0("Compute covariates:", cur_expr_covariates))
+        if(sum(cur.gene.ind, na.rm=TRUE) < filter.params$min.genes.for.reg) # require minimal number of genes !!!
+          next # skip this cell type and age group
         
+        cur_expr_covariates = unlist( lapply(expression.stat.x, paste0, "_", age.group) )
         cur_reg_covariates_mat <- cbind(cur_gene_features_mat[which(cur.gene.ind),], 
                                         expr.stats$DF.expr.stats[[k]][which(cur.gene.ind),cur_expr_covariates])
-
-        #        print(paste0("Sum cur.gene.inds=", sum(cur.gene.ind)))
         reg.model <- lm(expr.stats$DF.expr.stats[[k]][which(cur.gene.ind), paste0(expression.stat.y, "_", age.group)] ~ ., 
-                        data = as.data.frame(cur_gene_features_mat[which(cur.gene.ind),]))  # Take log of fold-change. Maybe take difference? (they're after log)
-#        print("Fitted reg. model")
-        DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get p-values (excluding intercept)
+                        data = as.data.frame(cur_reg_covariates_mat))
+#                          as.data.frame(cur_gene_features_mat[which(cur.gene.ind),]))  # Take log of fold-change. Maybe take difference? (they're after log)
+
+        DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get coefficients (excluding intercept)
         DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
-#        print(paste0("Copied to DF_cor, ", age.group))
         reg.ctr = reg.ctr + 1
       }
       
       # Do regression for fold-change 
-      
       fc.gene.ind <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_fc")] > -1  # Set current gene inds 
+      cur_reg_covariates_mat <- cbind(cur_gene_features_mat[which(fc.gene.ind),], 
+                                      expr.stats$DF.expr.stats[[k]][which(fc.gene.ind),cur_expr_covariates])
       
-#      print(paste0("length old:", length( expr.stats$DF.expr.stats[[k]][fc.gene.ind,  paste0(expression.stat.y, "_old")] )))
-#      print(paste0("Length features: ", length(cur_gene_features_mat[fc.gene.ind,]   )))
-      
-      fc.reg.model <- lm(log(expr.stats$DF.expr.stats[[k]][fc.gene.ind, paste0(expression.stat.y, "_old")] / 
-                               expr.stats$DF.expr.stats[[k]][fc.gene.ind, paste0(expression.stat.y, "_young")]) ~ ., 
-                         data = as.data.frame(cur_gene_features_mat[fc.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
+
+      fc.reg.model <- lm(expr.stats$DF.expr.stats[[k]][which(fc.gene.ind), paste0(expression.stat.y, "_fc")]  ~ ., 
+                         data = as.data.frame(cur_reg_covariates_mat))
+#                         data = as.data.frame(cur_gene_features_mat[fc.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
       DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
       DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
       reg.ctr = reg.ctr + 1

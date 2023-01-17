@@ -143,7 +143,8 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)
 # Take list of data frames for all cell types  
 extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
-                                          age.groups = c("young", "old", "all", "fc"), SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
+                                          age.groups = c("young", "old", "all", "fc"), 
+                                          SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
 {
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', organ, '.',
@@ -200,9 +201,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   for(cell.type in cells_ind)  # First load data if not loaded already 
   {
-    DF.expr.stats[[cell.type]] <- as.data.frame(matrix(-999 ,nrow = n.genes, ncol = length(stats.col.names))) # n.stats*n.groups+1) # Set negatives 
-#    print("Dim DF.expr.stats first:")
-#    print( dim(DF.expr.stats[[cell.type]])  )
+    DF.expr.stats[[cell.type]] <- as.data.frame(matrix(NA ,nrow = n.genes, ncol = length(stats.col.names))) # n.stats*n.groups+1) # Set negatives 
     colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
     rownames(DF.expr.stats[[cell.type]]) <- toupper(rownames(SeuratOutput@assays$RNA@data))
 
@@ -210,8 +209,20 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
     {
       BASiCS.files <- dataset_to_BASiCS_file_names(data.type, organ, cell_types_categories[cell.type]) # Load BASiCS results
       print(paste0("Load BASiCS file: ", (BASiCS.files[[1]])))
-      load(BASiCS.files$test) # ,  temp_env <- new.env())  # one variable called 'test' #      env_list <- as.list(temp_env)
-
+      
+      if(!file.exists(BASiCS.files$test)) # try renaming (for Rats)
+        BASiCS.files$test <- str_replace(BASiCS.files$test, "DVT ", "DVT test ")
+      # Don't let corrupt files kill the run !! 
+      read.flag <- tryCatch( {
+        load(BASiCS.files$test)         # ,  temp_env <- new.env())  # one variable called 'test' #      env_list <- as.list(temp_env)
+        },
+        error = function(cond){return (FALSE)})
+      if(read.flag == FALSE)
+      {
+        print("Error! couldn't load!")
+        next  # move to next cell type
+      }
+      
       # Extract overdispersion features !!! 
       df.od = test@Results$Disp@Table
       df.od$GeneName = toupper(df.od$GeneName) # Uppercasing gene names
@@ -235,42 +246,27 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       {
         if(stat == "mean")
         {
-#          print(paste0("length old:", length( DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] )))
-
-          if(age.group == "fc")  #union young or old 
-            DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( 
-              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] / 
-                DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")]) # Take only filtered cells. why? 
-          else
+          if(age.group == "fc")  # union young or old 
+          {
+            bulk.data.types <- c()  # add bulk data types with fold change information
+            if(data.type %in% bulk.data.types)
+              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- c() # read excel TBD
+            else
+              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( 
+                DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] / 
+                  DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")]) # Take only filtered cells. why? 
+          } else
             # Repeat for all age groups and features 
             DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
         }
         if(stat == "overdispersion")
         {
-#          print(paste0("Extract overdispersion: ", age.group))
           od.str = switch(age.group, 
                           "all" = "DispOverall", 
                           "old" = "Disp1", 
                           "young" = "Disp2", 
                           "fc" = "DispFC")
-          
-#          print("Size df.od:")
-#          print(dim(df.od))
-#          print(paste0("cur.gene.ind: ", length(cur.gene.ind), sum(cur.gene.ind)))
-#          print(paste0("cell.type: ", cell.type, ", len DF: ", length(DF.expr.stats)))
-#          ccc <- df.od[cur.gene.ind, od.str]
-#          print("CCC:")
-#          print(ccc)
-#          print("len ccc ")
-#          print(length(ccc))
-#          print("Dim DF.expr.stats:")
-#          print( dim(DF.expr.stats[[cell.type]])  )
-#          print("len df.od[cur.gene.ind, od.str]: ")
-#          print(length(df.od[cur.gene.ind, od.str]))
-#          print("len DF.expr.stats[[cell.type]][cur.gene.ind  , ]")
-#          print(length(DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)]))
           DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]
-#          print("Success Read overdispersion!!!! ")
         }
       }
     } # end loop on age groups    
@@ -355,8 +351,15 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
   groups = dataset_to_age_groups(data.type)
   # Read cell type categories 
   RData_finish = ifelse(data.type == "TM.droplet", "drop 3-24 same-mean.RData","same-mean.RData")
-  tissue.cell.type <- paste(tissue, cell.type)
-  test_file = paste0(basics.dir, paste(paste0("DVT/",data.type,"/DVT"), tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
+  if(tissue == tolower(tissue)) # if lower, set all upper !
+    tissue.cell.type <- paste(toupper(tissue), cell.type)
+  else
+    tissue.cell.type <- paste(tissue, cell.type)
+  if(data.type %in% c("TM.droplet", "TM.facs")) # two technologies in the same dataset
+    test_file = paste0(basics.dir, paste(paste0("DVT/",data.type,"/DVT"), tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
+  else
+    test_file = paste0(basics.dir, paste("DVT/DVT", tissue.cell.type, RData_finish))   # Differential over-dispersion test results file
+  
   old_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$old_str), ".Rds")     # Old Markov chain file name
   young_file = paste0(basics.dir, "chains/chain_", paste(tissue.cell.type, groups$young_str), ".Rds")     # Young Markov chain file name
 #  print("End get BASiCS names")

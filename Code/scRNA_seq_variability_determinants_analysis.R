@@ -56,6 +56,7 @@ filter.params = c()
 filter.params$min.count <- 10 
 filter.params$min.cells.total <- 100
 filter.params$min.cells.per.age <- 20
+filter.params$min.genes.for.reg <- 50
 
 # Include all needed source files 
 source("scRNA_seq_utilities.R")
@@ -71,10 +72,10 @@ feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG"
 
 # What analysis to do: 
 preprocess = FALSE
-mean.analysis = TRUE
+reg.analysis = TRUE
 mean.figures = TRUE
-var.analysis = TRUE
-var.figures = TRUE
+# var.analysis = TRUE
+# var.figures = TRUE
 
 if(preprocess)
 {
@@ -82,7 +83,7 @@ if(preprocess)
   preprocess_facs(data.type)
 }
 
-if(mean.analysis)
+if(reg.analysis)  # regression with different covariates and response expression variables 
 {
   for(data.type in data.types)
   {
@@ -91,14 +92,8 @@ if(mean.analysis)
                                                            expression.stat.y = c("overdispersion"), expression.stat.x = c("mean"), # set y and covariates  
                                                            force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
   }
-#  DF_cor.facs = mean_expression_analysis("TM.facs", feature.types = feature.types)  # Should be both droplet and facs in the same function
-#  DF_cor.rat = mean_expression_analysis("CR.Rat", feature.types = c("selection", "gene.len"))  
 }
   
-if(var.analysis)
-{
-  DF_cor = var_analysis(data.type)
-}
 
 # Plot figures: 
 if(mean.figures)
