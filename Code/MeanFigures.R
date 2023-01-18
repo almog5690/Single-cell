@@ -29,7 +29,9 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
     if(is.null(tissue) | is.null(cell_type)){
       stop("Tissue or cell type not provided")
     }
-    draw_cor_scatters_figure()
+    draw_cor_scatters_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types, 
+                                         tissue = "Lung", cell_type = "type II pneumocyte")
+      
   }  # if figure 2 or 22
   
   if(fig.num == 99)  # New: draw heatmap of correlations of all gene features. Need to compute all pairwise correlations across tissues and cell types 
@@ -42,31 +44,35 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
 
 
 
-# Detailed regression of one cell type with two-dim density, and other young vs. old. scatter plots 
-draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
-{
-  
-}
 
 
 # Draw figure of bars of correlation or beta regression coefficients with color showing log p-values
 draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
 {
   n.datas <- length(data.types)
+  p_feature_vs_mean_bar <- vector("list", n.datas)
+  
   group.str = switch(as.character(fig.num), "1" = "all", "11" = "fc", "111" = "fc_abs")  #  == 1) "all" else "fc"
   for(feature.type in feature.types) # Here plot each feature vs. mean expression, not just selection
   {
+    print("Feature:")
+    print(feature.type)
     cor.col <- paste0(feature.type, "_", group.str, "_cor")
     pval.col <- paste0(feature.type, "_", group.str, "_pval")
     # adding cell type variable
     for (i in 1:n.datas) {
+      if(!(cor.col %in% colnames(DF_cors[[i]])) | !(pval.col %in% colnames(DF_cors[[i]]))) # missing data
+      {
+        print(paste0("Error! Missing ", cor.col, " ", pval.col, " data! aborting!"))
+        return(-1)
+      }
       DF_cors[[i]]$CT = interaction(DF_cors[[i]]$Organs, DF_cors[[i]]$Cell_type, sep = ":")
       DF_cors[[i]]$fill.plot <- unlist(-log10(DF_cors[[i]][pval.col]))
       DF_cors[[i]]$y.plot <- reorder(DF_cors[[i]]$CT, unlist(DF_cors[[i]][cor.col]))
       DF_cors[[i]]$x.plot <- unlist(DF_cors[[i]][cor.col])
       
-      
       # Joint multiple plots !!! 
+      print("ggplot:")
       p_feature_vs_mean_bar[[i]] = ggplot(DF_cors[[i]], aes(y = y.plot, x = x.plot, fill = fill.plot)) + 
         geom_bar(stat = "identity") + theme_classic() +
         scale_fill_gradient2(high = "red", mid = "white",low = "blue",midpoint = -log10(0.05)) +
@@ -87,8 +93,9 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
 
 
 
+# Detailed regression of one cell type with two-dim density, and other young vs. old. scatter plots 
 # Plot colorful scatter 
-draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, 
+draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
                                      tissue = "Lung", cell_type = "type II pneumocyte")
 {
   n.datas <- length(data.types)
