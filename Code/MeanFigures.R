@@ -3,6 +3,8 @@ library(cowplot)
 library(latex2exp)
 library(colorRamps)
 library(ggpointdensity)
+library(reshape2)
+library(ggcorrplot)
 
 source("scRNA_seq_utilities.R")
 
@@ -36,7 +38,22 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
   
   if(fig.num == 99)  # New: draw heatmap of correlations of all gene features. Need to compute all pairwise correlations across tissues and cell types 
   {
-    
+      
+      gene.features <- read_gene_features(feature.names=feature.types)
+      expr.stats <- extract_expression_statistics(data.types[1], tissue, expression.stats = "mean") # extract means
+      n.cell.types <- length(expr.stats$cells_ind)
+      mean.expr.list = vector("list", n.cell.types)
+      for(i in 1:n.cell.types)
+        mean.expr.list[[i]] = expr.stats$DF.expr.stats[[expr.stats$cells_ind[i]]][,"mean_all"]
+      names(mean.expr.list) <- expr.stats$cell_types_categories[expr.stats$cells_ind]
+
+      df.features.and.mean.expr <- list_to_common_dataframe(c(mean.expr.list, gene.features))
+                  
+      features.and.mean.expr.cor.mat = cor(df.features.and.mean.expr, use = "complete.obs") 
+      ggcorrplot(features.and.mean.expr.cor.mat)
+
+      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types[1], collapse = "_"), 
+                    '.', paste(feature.types, collapse = "_"), '.', tissue, '.png'), height = 6,width = 9)  # Modify name to get figure  
   }
   
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)

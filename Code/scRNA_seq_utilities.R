@@ -133,6 +133,22 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
 }
 
 
+# Get union of items in list 
+list_to_common_dataframe <- function(l)
+{
+  n <- length(l)
+  row.names <- c()  
+  for( i in 1:n)
+    row.names <- union(row.names, names(l[[1]]))
+  n.row <- length(row.names)
+  print(n.row)
+  df_common <- data.frame(matrix(NA, ncol = n, nrow = n.row))
+  colnames(df_common) <- names(l)
+  rownames(df_common) <- row.names
+  for( i in 1:n)
+    df_common[names(l[[i]]), names(l)[i]] <- l[[i]]
+  return(df_common)
+}
 
 # Compute features of expression (mean, overdispersion, variance ... )
 # for a given tissue/cell type
