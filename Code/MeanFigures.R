@@ -5,6 +5,7 @@ library(colorRamps)
 library(ggpointdensity)
 library(reshape2)
 library(ggcorrplot)
+library(stringr)
 
 source("scRNA_seq_utilities.R")
 
@@ -16,13 +17,13 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
   num.cell.types <- rep(0, n.datas)
   for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
     set_data_dirs(data.types[i])
-    mean.analysis.outfile <- paste0(analysis.results.dir, 'mean.analysis.', data.types[i], # '.RData') 
-                                    ".", paste0( feature.types, collapse="_"), '.RData') # should include also features 
+    mean.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.types[i], # '.RData') 
+                                    ".mean.vs..", paste0( feature.types, collapse="_"), '.RData') # should include also features 
     load(mean.analysis.outfile)
     DF_cors[[i]] <- DF_cor     #    DF_cors[[i]] <- mean_expression_analysis(data.types[i]) # don't run again 
     num.cell.types[i] = dim(DF_cors[[i]])[1]
   }
-  
+
   if(fig.num %in% c(1, 11, 111))  #### Figure 1 (all) or 11 (fold-change) or 111 (abs-fold-change)
     draw_cor_bars_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
 
@@ -35,33 +36,36 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
                                          tissue = "Lung", cell_type = "type II pneumocyte")
       
   }  # if figure 2 or 22
+  if(fig.num == 666)
+    draw_boxplot_cor_overview_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
   
+
   if(fig.num == 99)  # New: draw heatmap of correlations of all gene features. Need to compute all pairwise correlations across tissues and cell types 
-  {
-      
-      gene.features <- read_gene_features(feature.names=feature.types)
-      expr.stats <- extract_expression_statistics(data.types[1], tissue, expression.stats = "mean") # extract means
-      n.cell.types <- length(expr.stats$cells_ind)
-      mean.expr.list = vector("list", n.cell.types)
-      for(i in 1:n.cell.types)
-        mean.expr.list[[i]] = expr.stats$DF.expr.stats[[expr.stats$cells_ind[i]]][,"mean_all"]
-      names(mean.expr.list) <- expr.stats$cell_types_categories[expr.stats$cells_ind]
-
-      df.features.and.mean.expr <- list_to_common_dataframe(c(mean.expr.list, gene.features))
-                  
-      features.and.mean.expr.cor.mat = cor(df.features.and.mean.expr, use = "complete.obs") 
-      ggcorrplot(features.and.mean.expr.cor.mat)
-
-      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types[1], collapse = "_"), 
-                    '.', paste(feature.types, collapse = "_"), '.', tissue, '.png'), height = 6,width = 9)  # Modify name to get figure  
-  }
+    draw_heatmap_cor_figure(fig.num, data.types, feature.types, analysis.figures.dir)
   
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
 }
 
 
 
-
+draw_heatmap_cor_figure <- function(fig.num, data.types, feature.types, analysis.figures.dir)
+{
+  gene.features <- read_gene_features(feature.names=feature.types)
+  expr.stats <- extract_expression_statistics(data.types[1], tissue, expression.stats = "mean") # extract means
+  n.cell.types <- length(expr.stats$cells_ind)
+  mean.expr.list = vector("list", n.cell.types)
+  for(i in 1:n.cell.types)
+    mean.expr.list[[i]] = expr.stats$DF.expr.stats[[expr.stats$cells_ind[i]]][,"mean_all"]
+  names(mean.expr.list) <- expr.stats$cell_types_categories[expr.stats$cells_ind]
+  
+  df.features.and.mean.expr <- list_to_common_dataframe(c(mean.expr.list, gene.features))
+  
+  features.and.mean.expr.cor.mat = cor(df.features.and.mean.expr, use = "complete.obs") 
+  ggcorrplot(features.and.mean.expr.cor.mat)
+  
+  ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types[1], collapse = "_"), 
+                '.', paste(feature.types, collapse = "_"), '.', tissue, '.png'), height = 6,width = 9)  # Modify name to get figure  
+}
 
 # Draw figure of bars of correlation or beta regression coefficients with color showing log p-values
 draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
@@ -261,13 +265,61 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
 
 draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
 {
+  n.datas <- length(data.types)
+  meta.data <- vector("list", n.datas)
+  names(meta.data) <- data.types
+  num.cell.types <- rep(0, n.datas)
+  for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
+    set_data_dirs(data.types[i])
+    num.cell.types[i] = dim(DF_cors[[i]])[1]
+    meta.data[[data.type]] = get_meta_data(data.types[i])
+  }
+  
+  
+  print("Doing Boxplots !! ")  
+  show.columns <- c("gene.len", "selection")
+  all.show.columns <- c()
+  for(s in show.columns)
+    for(age.group in age.groups)
+      all.show.columns <- c(all.show.columns, paste0(s, "_", age.group, "_cor"))  
+
+  for (i in 1:n.datas)   # Either perform the analysis or read the output file 
+    df.s[[i]] <- stack(DF_cors[[1]][1:40,all.show.columns])  %>% mutate(dataset = data.types[[i]])
+
+  df.box <- df.s[[1]]
+  for (i in 2:n.datas)
+    df.box <- rbind(df.box, df.s[[i]])
+#  df.box <- df.box %.% mutate(covariate = strsplit(as.character(ind), "_")[[1]][1])
+  df.box$covariate <- str_extract(as.character(df.box$ind),  "[^_]+") 
+#  df.box$ind.only <- str_extract(as.character(df.box$ind),  "[_^]+")  # (?<=_)
+  df.box$ind.only <- as.factor(sub("^[^_]*_", "", as.character(df.box$ind)))
+  
+  df.box$ind <- as.factor(df.box$ind) 
+  
+#  ggplot(df.box, 
+#         aes(x = factor(ind, levels = names(DF_cors[[1]])), 
+#             y = values, group = factor(ind, levels = names(DF_cors[[1]])))) + 
+    ggplot(df.box, aes(x = ind.only, y = values)) + 
+      geom_boxplot(aes(fill = dataset)) + 
+    facet_grid(. ~ covariate) +
+    theme(axis.text.x = element_text(angle = 90,hjust=0))
+#    geom_boxplot(aes(fill = dataset)) + 
+      
+#  meta.data <-   
+  age.groups <- c("young", "old", "all")
   for(data.type in data.types) # loop over different correlations
+  {
+    
     for(age.group in age.groups)
     {
-          # read all correlations  
+        xxx = 999  # read all correlations  
     }
       
-           
+  }
+  
+  ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
+                '.png'), height = 6,width = 9)  # Modify name to get figure  
+  
 }
 
 

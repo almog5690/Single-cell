@@ -49,6 +49,7 @@ y.test <- c("mge", "od", "od", "od", "Delta.mge", "Delta.od", "Delta.od") # The 
 x.test <- c("", "", "", "mge", "mge", "mge", "mge") # The covariates 
 old.yound.delta <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) # Test also difference between young and old? 
 cor.test <- c(FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)  # Compute also correlation coefficient?
+age.groups <- c("all", "young", "old")
 
 
 # Set filtering parameters for filtering (may depend on the data type?): 
