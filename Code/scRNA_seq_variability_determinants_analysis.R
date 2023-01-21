@@ -21,7 +21,7 @@ user.name = "Or" #  "Almog"  # Or
 if(user.name == "Almog")
 {
   main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  main.data.dir = "C:/Users/almog/Singel cell"  # Change to directory with all the data
+  main.data.dir = "C:/Users/User/Google Drive/SingleCell"  # Change to directory with all the data
 } else # Or 
 {
   # Directories 
