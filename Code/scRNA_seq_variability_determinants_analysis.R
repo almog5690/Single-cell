@@ -100,10 +100,12 @@ if(reg.analysis)  # regression with different covariates and response expression
 if(mean.figures)
 {
   for (fig.num in c(1,2,11,111,99))
-    draw_mean_figures(c("TM.facs", "TM.droplet"), fig.num, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
+    draw_expr_reg_figures(c("TM.facs", "TM.droplet"), expr.stat.y = "mean", expr.stat.x = c(), 
+                          fig.num, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
 #  draw_mean_figures(c("CR.Rat"), 1, feature.types = c("selection", "gene.len")) 
   for (fig.num in c(1,2,11,111))
-    draw_mean_figures(c("CR.Rat"), fig.num, feature.types = feature.types, # c("selection", "gene.len"), 
+    draw_expr_reg_figures(c("CR.Rat"), expr.stat.y = "mean", expr.stat.x = c(),
+                          fig.num, feature.types = feature.types, # c("selection", "gene.len"), 
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
 }
 
