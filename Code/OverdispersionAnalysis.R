@@ -7,6 +7,8 @@ overdispersion_analysis <- function(data.type, force.rerun = FALSE, attribute = 
   disp.selc.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.selection.analysis.', data.type, '.RData')
   disp.len.analysis.outfile <- paste0(analysis.results.dir, 'OverDisperion.length.analysis.', data.type, '.RData') # separate files for each feature -> change to one file
   
+  # Set data directories: 
+  set_data_dirs(data.type)
   samples <- get_tissue_file_names(data.type)
   meta.data = get_meta_data(data.type)
   
