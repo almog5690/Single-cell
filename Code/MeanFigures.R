@@ -10,16 +10,19 @@ library(stringr)
 source("scRNA_seq_utilities.R")
 
 # Add saving figures to file in code!!! (use ggsave !!! )
-draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection", "gene.len"), 
+draw_expr_reg_figures <- function(data.types, expr.stat.y = "mean", expr.stat.x = c(), fig.num, feature.types = c("selection", "gene.len"), 
                               tissue = "Lung", cell_type = "type II pneumocyte") {  # default tissue + cell type 
   n.datas <- length(data.types)
   p_feature_vs_mean_bar <- DF_cors <- vector("list", n.datas)
   num.cell.types <- rep(0, n.datas)
   for (i in 1:n.datas) {  # Either perform the analysis or read the output file 
     set_data_dirs(data.types[i])
-    mean.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.types[i], # '.RData') 
-                                    ".mean.vs..", paste0( feature.types, collapse="_"), '.RData') # should include also features 
-    load(mean.analysis.outfile)
+    expr.reg.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.types[i], # '.RData') 
+                                    ".", expr.stat.y, ".vs.", 
+                                    paste0( expr.stat.x, collapse="_"), rep('.', min(length(expr.stat.x), 1)), 
+                                    paste0( feature.types, collapse="_"), '.RData') # should include also features 
+    print(expr.reg.analysis.outfile)
+    load(expr.reg.analysis.outfile)
     DF_cors[[i]] <- DF_cor     #    DF_cors[[i]] <- mean_expression_analysis(data.types[i]) # don't run again 
     num.cell.types[i] = dim(DF_cors[[i]])[1]
   }
@@ -34,9 +37,8 @@ draw_mean_figures <- function(data.types, fig.num, feature.types = c("selection"
     }
     draw_cor_scatters_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types, 
                                          tissue = "Lung", cell_type = "type II pneumocyte")
-      
   }  # if figure 2 or 22
-  if(fig.num == 666)
+  if(fig.num %in% c(66,666))
     draw_boxplot_cor_overview_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
   
 
@@ -257,14 +259,14 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
 
 
 # new: Boxplots for all correlations: 
-# First top will be mean
-# Second bottom will be for overdispersion
-
+# First top will be spearman correlation, second bottom will be beta regression coefficient
+# Separate figures for mean and overdispersion
 # 1. selection
 # 2. length
-
+#
 draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
 {
+  expr.stat.y <- if (fig.num == 66) "mean" else "overdispersion"
   n.datas <- length(data.types)
   meta.data <- vector("list", n.datas)
   names(meta.data) <- data.types
@@ -277,15 +279,26 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
   
   
   print("Doing Boxplots !! ")  
-  show.columns <- c("gene.len", "selection")
+#  show.columns <- c("gene.len", "selection") # take feature types
+  n.features <- 2
+#  n.features <- length(feature.types[1:5])
   all.show.columns <- c()
-  for(s in show.columns)
-    for(age.group in age.groups)
-      all.show.columns <- c(all.show.columns, paste0(s, "_", age.group, "_cor"))  
+  for(s in feature.types[1:n.features])
+    for(age.group in c(age.groups, "fc", "deltaYO"))
+      for(stat.type in c("cor", "beta"))
+        all.show.columns <- c(all.show.columns, paste0(s, "_", age.group, "_", stat.type))  
 
+  
+  df.s <- vector("list", n.datas)
   for (i in 1:n.datas)   # Either perform the analysis or read the output file 
-    df.s[[i]] <- stack(DF_cors[[1]][1:40,all.show.columns])  %>% mutate(dataset = data.types[[i]])
-
+  {
+    for(s in feature.types[1:n.features])
+      for(stat.type in c("cor", "beta"))
+        DF_cors[[i]][, paste0(s, "_deltaYO_", stat.type)] <- DF_cors[[i]][, paste0(s, "_old_", stat.type)] - 
+          DF_cors[[i]][, paste0(s, "_young_", stat.type)]
+    # Create a new column for difference
+    df.s[[i]] <- stack(DF_cors[[i]][1:40,all.show.columns])  %>% mutate(dataset = data.types[[i]])
+  }
   df.box <- df.s[[1]]
   for (i in 2:n.datas)
     df.box <- rbind(df.box, df.s[[i]])
@@ -293,16 +306,21 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
   df.box$covariate <- str_extract(as.character(df.box$ind),  "[^_]+") 
 #  df.box$ind.only <- str_extract(as.character(df.box$ind),  "[_^]+")  # (?<=_)
   df.box$ind.only <- as.factor(sub("^[^_]*_", "", as.character(df.box$ind)))
+  df.box$stat.type <- as.factor(sub("^[^_]*_", "", as.character(df.box$ind.only)))
+  df.box$covariate.and.stat <- paste(df.box$covariate, df.box$stat.type)
+  df.box$ind.only <- str_extract(as.character(df.box$ind.only),  "[^_]+")
   
   df.box$ind <- as.factor(df.box$ind) 
-  
-#  ggplot(df.box, 
-#         aes(x = factor(ind, levels = names(DF_cors[[1]])), 
-#             y = values, group = factor(ind, levels = names(DF_cors[[1]])))) + 
+  facet.levels <- unique(df.box$covariate.and.stat)[c(seq(1, 2*n.features, 2), seq(2, 2*n.features, 2))]
     ggplot(df.box, aes(x = ind.only, y = values)) + 
       geom_boxplot(aes(fill = dataset)) + 
-    facet_grid(. ~ covariate) +
+      facet_wrap( ~ factor(covariate.and.stat, levels = facet.levels), 
+                  scales = "free", ncol = n.features) + # , labeller = label_both) +
+      xlab(paste0(expr.stat.y, " analysis")) + 
     theme(axis.text.x = element_text(angle = 90,hjust=0))
+#    facet_wrap( ~ factor(covariate.and.stat, levels = facet.levels), scales = "free", ncol = n.features) +
+#      xlab("Analysis")
+#    theme(axis.text.x = element_text(angle = 90,hjust=0))
 #    geom_boxplot(aes(fill = dataset)) + 
       
 #  meta.data <-   
@@ -316,7 +334,8 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
     }
       
   }
-  
+  print("saving box-plots!!!")
+  print(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"), '.png'))
   ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
                 '.png'), height = 6,width = 9)  # Modify name to get figure  
   
