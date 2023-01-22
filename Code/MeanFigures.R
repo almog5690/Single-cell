@@ -37,8 +37,8 @@ draw_expr_reg_figures <- function(data.types, expr.stat.y = "mean", expr.stat.x 
     }
     draw_cor_scatters_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types, 
                                          tissue = "Lung", cell_type = "type II pneumocyte")
-  }  # if figure 2 or 22
-  if(fig.num %in% c(66,666))
+  }  # end if figure 2 or 22
+  if(fig.num %in% c(66,666))  # show overview boxplots 
     draw_boxplot_cor_overview_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
   
 
@@ -278,10 +278,7 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
   }
   
   
-  print("Doing Boxplots !! ")  
-#  show.columns <- c("gene.len", "selection") # take feature types
-  n.features <- 2
-#  n.features <- length(feature.types[1:5])
+  n.features <- 2 #  n.features <- length(feature.types[1:5])
   all.show.columns <- c()
   for(s in feature.types[1:n.features])
     for(age.group in c(age.groups, "fc", "deltaYO"))
@@ -318,32 +315,10 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
                   scales = "free", ncol = n.features) + # , labeller = label_both) +
       xlab(paste0(expr.stat.y, " analysis")) + 
     theme(axis.text.x = element_text(angle = 90,hjust=0))
-#    facet_wrap( ~ factor(covariate.and.stat, levels = facet.levels), scales = "free", ncol = n.features) +
-#      xlab("Analysis")
-#    theme(axis.text.x = element_text(angle = 90,hjust=0))
-#    geom_boxplot(aes(fill = dataset)) + 
-      
-#  meta.data <-   
-  age.groups <- c("young", "old", "all")
-  for(data.type in data.types) # loop over different correlations
-  {
-    
-    for(age.group in age.groups)
-    {
-        xxx = 999  # read all correlations  
-    }
-      
-  }
-  print("saving box-plots!!!")
-  print(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"), '.png'))
+
   ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
                 '.png'), height = 6,width = 9)  # Modify name to get figure  
   
 }
 
 
-draw_features_heatmap_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
-{
-  features.mat <- read_gene_features()
-  # Use ggplot to do heatmap for features 
-}  
