@@ -74,7 +74,7 @@ feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG"
 # What analysis to do: 
 preprocess = FALSE
 reg.analysis = TRUE
-mean.figures = TRUE
+reg.figures = TRUE
 # var.analysis = TRUE
 # var.figures = TRUE
 
@@ -97,7 +97,7 @@ if(reg.analysis)  # regression with different covariates and response expression
   
 
 # Plot figures: 
-if(mean.figures)
+if(reg.figures)
 {
   for (fig.num in c(1,2,11,111,99))
     draw_expr_reg_figures(c("TM.facs", "TM.droplet"), expr.stat.y = "mean", expr.stat.x = c(), 
@@ -107,11 +107,6 @@ if(mean.figures)
     draw_expr_reg_figures(c("CR.Rat"), expr.stat.y = "mean", expr.stat.x = c(),
                           fig.num, feature.types = feature.types, # c("selection", "gene.len"), 
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
-}
-
-if(var.figures)
-{
-  DF_cor = dra_var_figures(data.type)
 }
 
 
