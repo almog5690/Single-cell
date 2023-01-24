@@ -16,7 +16,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
   # Set data directories: 
   set_data_dirs(data.type)
   reg.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.type, '.', expression.stat.y, '.vs.', 
-                                  paste0( expression.stat.x, collapse="_"), rep('.', min(length(expr.stat.x), 1)),
+                                  paste0( expression.stat.x, collapse="_"), rep('.', min(length(expression.stat.x), 1)),
                                   paste0( feature.types, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
   meta.data = get_meta_data(data.type)
