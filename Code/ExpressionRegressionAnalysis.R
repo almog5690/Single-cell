@@ -69,7 +69,6 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 
                                                 expression.stats = expression.stats, SeuratOutput=c(), force.rerun = FALSE) # extract means
     
-    
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     cells_ind = which(!unlist(lapply(expr.stats$DF.expr.stats, is.null)))
@@ -113,7 +112,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
                                   paste0(feature.type, "_", age.group, "_cor"))] <- 
             cor.test(expr.stats$DF.expr.stats[[k]][which(cur.gene.ind), paste0(expression.stat.y, "_", age.group)], 
                      cur_gene_features[[feature.type]][which(cur.gene.ind)], 
-                     use = "complete.obs", method = "spearman")[3:4]
+                     use = "complete.obs", method = "spearman")[3:4]  # Compute correlation and pvalues, ignore NaNs
         }
         
         # 2. Fold-change       
