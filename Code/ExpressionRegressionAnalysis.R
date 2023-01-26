@@ -163,7 +163,6 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       
       for(age.group in c("all", "young", "old")) # colnames(gene.mean.by.age.group))
       {
-
         # New: get extracted expression features
         cur.gene.ind <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_", age.group)] > -1  # Set current gene inds 
         names(cur.gene.ind) <- rownames(expr.stats$DF.expr.stats[[k]])
@@ -187,7 +186,6 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       fc.gene.ind <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_fc")] > -1  # Set current gene inds 
       cur_reg_covariates_mat <- cbind(cur_gene_features_mat[which(fc.gene.ind),], 
                                       expr.stats$DF.expr.stats[[k]][which(fc.gene.ind),cur_expr_covariates])
-      
 
       fc.reg.model <- lm(expr.stats$DF.expr.stats[[k]][which(fc.gene.ind), paste0(expression.stat.y, "_fc")]  ~ ., 
                          data = as.data.frame(cur_reg_covariates_mat))

@@ -115,7 +115,6 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
 }
 
 
-
 # Detailed regression of one cell type with two-dim density, and other young vs. old. scatter plots 
 # Plot colorful scatter 
 draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
@@ -219,9 +218,9 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
       
       # ranking selection and old and young mean expressions
       g = na.omit(gene_feat)
-      selc_rank = rank(g,ties.method = "average")
-      mean_young_rank = rank(gene_mean_young[names(g)],ties.method = "average")
-      mean_old_rank = rank(gene_mean_old[names(g)],ties.method = "average")
+      selc_rank = rank(g, ties.method = "average")
+      mean_young_rank = rank(gene_mean_young[names(g)], ties.method = "average")
+      mean_old_rank = rank(gene_mean_old[names(g)], ties.method = "average")
       
       # data frame contains old and young genes mean expression and selection ranks for the plots
       df_4 = data.frame("Mean" = c(mean_old_rank, mean_young_rank),
