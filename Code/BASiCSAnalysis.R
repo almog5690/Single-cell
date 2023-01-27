@@ -61,23 +61,8 @@ BASiCS_analysis <- function(data.type){
         batch = SC@meta.data$mouse.id # Using mouse id as batch
       }
       
-      # BASiCS directory and file names
-      if(data.type == "CR.Rat"){
-        basics.chains.dir =  paste0(main.data.dir, 'Data/CR.Rat/chains/')
-        basics.DVT.dir =  paste0(main.data.dir, 'Data/CR.Rat/DVT/')
-        DVT.file.name = paste0(basics.DVT.dir,paste(samples$organs[i],cell_types_categories[ct_ind],"same-mean.RData"))
-
-      }
-      if(data.type == "TM.droplet"){
-        basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/chains/TM.droplet')
-        basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/DVT/TM,droplet')
-        DVT.file.name = paste0(basics.DVT.dir,paste(samples$organs[i],cell_types_categories[ct_ind],"drop 3-24 same-mean.RData"))
-      }
-      if(data.type == "TM.facs"){
-        basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/chains/TM.facs')
-        basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/DVT/TM.facs')
-        DVT.file.name = paste0(basics.DVT.dir,paste(samples$organs[i],cell_types_categories[ct_ind],"same-mean.RData"))
-      }
+      DVT.file.name = get_DVT_file_name(data.type, samples$organs[tissue.ind],cell_types_categories[ct_ind])
+      
       
       # We preform the BASiCS only if both age group have more then 1 mouse  
       if(!(length(table(batch[cell_types == (ct_ind-1) & young.ind]))==1|length(table(batch[cell_types == (ct_ind-1) & old.ind]))==1)){ 
