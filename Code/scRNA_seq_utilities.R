@@ -252,9 +252,13 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                        "young" = young.ind, 
                        "old" = old.ind, 
                        "fc" = young.ind)  & (cell_types==cell.type-1) # take only cell type 
-      cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, cur.cell.ind]) > filter.params$min.count # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes
+      # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes FILTER BY ALL!!!
       if(age.group == "fc")  #union young or old 
-        cur.gene.ind = cur.gene.ind |(rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )
+        cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, young.ind]) > filter.params$min.count |
+        (rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )
+      else
+        cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, all.ind]) > filter.params$min.count # cur.cell.ind
+      
       names(cur.gene.ind) = toupper(names(cur.gene.ind))
 
       # Next, extract different statistics 

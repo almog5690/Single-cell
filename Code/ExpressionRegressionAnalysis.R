@@ -67,7 +67,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
   for(i in 1:length(samples$organs)){  # SKIN, SCAT, .. Many files in facs couldn't be read. Magin number error (?!) 
     # New: use utility to extract statistics: can be very heavy 
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 
-                                                expression.stats = expression.stats, SeuratOutput=c(), force.rerun = FALSE) # extract means
+                                                expression.stats = expression.stats, SeuratOutput=c(), force.rerun = TRUE) # extract means
     
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
@@ -201,3 +201,6 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
   save(DF_cor, file=reg.analysis.outfile)   # Save dataframe to file ( Save also to excel? ) 
   return(DF_cor)
 } # End function mean expression droplet 
+
+
+

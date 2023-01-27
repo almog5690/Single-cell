@@ -201,7 +201,7 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
       gene_mean_young = rowMeans(counts.mat[,(cell_types==k-1)&(young.ind)])
       gene_mean_young = gene_mean_young[cur_gene_name]
       
-      # Filtering genes with less then 10 reads in current cell type
+      # Filtering genes with less then 10 reads in ALL cells of current cell type
       genes_ind = rowSums(SC@assays$RNA@counts[,cell_types==k-1]) > filter.params$min.count # 10
       names(genes_ind) = toupper(names(genes_ind))
       genes_ind = genes_ind[cur_gene_name]
@@ -236,7 +236,7 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
       
       # Selection rank vs mean expression rank for both young and old for the Lung Pneumocyte cell type
       p_denst[[i]] = ggplot(df_4) +
-        geom_point(aes(x = Mean, y = gene.feature, fill = density),color = "white", 
+        geom_point(aes(x = Mean, y = gene.feature, fill = density), color = "white", 
                    alpha = 1, size = 1.8,  shape = 21, show.legend = T) +
         scale_fill_gradientn(colors = matlab.like(100)) + 
         facet_wrap(~Age, labeller = labeller(Age = age_name)) + 
