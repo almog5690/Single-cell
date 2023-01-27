@@ -384,7 +384,7 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 }
 
 
-get_DVT_file.name <- function(data.type,tissue,cell_type)
+get_DVT_file_name <- function(data.type,tissue,cell_type)
 {
   # BASiCS directory and file names
   if(data.type == "CR.Rat"){
