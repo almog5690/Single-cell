@@ -526,7 +526,7 @@ draw_var_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors
 
 # Detailed regression of one cell type with two-dim density, and other young vs. old. scatter plots 
 # Plot colorful scatter 
-draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
+draw_var_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
                                      tissue = "Lung", cell_type = "type II pneumocyte")
 {
   n.datas <- length(data.types)

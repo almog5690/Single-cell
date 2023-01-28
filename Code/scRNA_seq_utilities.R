@@ -272,9 +272,9 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
             if(data.type %in% bulk.data.types)
               DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- c() # read excel TBD
             else
-              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( 
-                DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] / 
-                  DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")]) # Take only filtered cells. why? 
+              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( # add regularization
+                (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] + filter.params$pseudo.count) / 
+                  (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")] + filter.params$pseudo.count)) # Take only filtered cells. why? 
           } else
             # Repeat for all age groups and features 
             DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 

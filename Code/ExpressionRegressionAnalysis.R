@@ -93,7 +93,14 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
         # 1. Pearson correlations for all, young, old
         for(age.group in c("all", "young", "old"))  # colnames(gene.mean.by.age.group))
         {
-          cur.gene.ind <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_", age.group)] > -1  # Set current gene inds 
+#          expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_", age.group)]
+#          names(eee) = rownames(expr.stats$DF.expr.stats[[k]])
+          cur.gene.ind <- !is.na(expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_", age.group)]) #  > filter.params$min.count  # Set current gene inds 
+          I_names = intersect( names(cur_gene_features[[feature.type]]), 
+                              rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)] )
+          cor(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)], 
+              cur_gene_features[[feature.type]][I_names], use = "complete.obs", method = "spearman")
+          
 #          print(paste0("cur.gene.ind: ", length(cur.gene.ind), ", ", sum(cur.gene.ind)))
 #          print("unique:")
 #          print(unique(cur.gene.ind))
@@ -110,8 +117,8 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
 #          print(paste0("Cor y:", length( cur_gene_features[[feature.type]][cur.gene.ind]  )))
           DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
                                   paste0(feature.type, "_", age.group, "_cor"))] <- 
-            cor.test(expr.stats$DF.expr.stats[[k]][which(cur.gene.ind), paste0(expression.stat.y, "_", age.group)], 
-                     cur_gene_features[[feature.type]][which(cur.gene.ind)], 
+            cor.test(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)], 
+                     cur_gene_features[[feature.type]][I_names], 
                      use = "complete.obs", method = "spearman")[3:4]  # Compute correlation and pvalues, ignore NaNs
         }
         
@@ -173,10 +180,12 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
         cur_expr_covariates = unlist( lapply(expression.stat.x, paste0, "_", age.group) )
         cur_reg_covariates_mat <- cbind(cur_gene_features_mat[which(cur.gene.ind),], 
                                         expr.stats$DF.expr.stats[[k]][which(cur.gene.ind),cur_expr_covariates])
+#        print(paste("Run reg:", age.group))
         reg.model <- lm(expr.stats$DF.expr.stats[[k]][which(cur.gene.ind), paste0(expression.stat.y, "_", age.group)] ~ ., 
-                        data = as.data.frame(cur_reg_covariates_mat))
+                        data = as.data.frame(cur_reg_covariates_mat), na.action=na.exclude)
 #                          as.data.frame(cur_gene_features_mat[which(cur.gene.ind),]))  # Take log of fold-change. Maybe take difference? (they're after log)
-
+#        print(paste("Finished Run reg:", age.group))
+        
         DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- reg.model$coefficients[-1] # get coefficients (excluding intercept)
         DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
         reg.ctr = reg.ctr + 1
@@ -187,9 +196,14 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       cur_reg_covariates_mat <- cbind(cur_gene_features_mat[which(fc.gene.ind),], 
                                       expr.stats$DF.expr.stats[[k]][which(fc.gene.ind),cur_expr_covariates])
 
+#      print("Run reg fc:")
+#      xxx = as.data.frame(cur_reg_covariates_mat)
+#      yyy = expr.stats$DF.expr.stats[[k]][which(fc.gene.ind), paste0(expression.stat.y, "_fc")]
+#      save(xxx, yyy, file="tmp_fc.RData")
       fc.reg.model <- lm(expr.stats$DF.expr.stats[[k]][which(fc.gene.ind), paste0(expression.stat.y, "_fc")]  ~ ., 
-                         data = as.data.frame(cur_reg_covariates_mat))
+                         data = as.data.frame(cur_reg_covariates_mat), na.action=na.exclude)
 #                         data = as.data.frame(cur_gene_features_mat[fc.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
+#      print("Finished reg fc:")
       DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
       DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
       reg.ctr = reg.ctr + 1

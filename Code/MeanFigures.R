@@ -26,7 +26,8 @@ draw_expr_reg_figures <- function(data.types, expr.stat.y = "mean", expr.stat.x 
     DF_cors[[i]] <- DF_cor     #    DF_cors[[i]] <- mean_expression_analysis(data.types[i]) # don't run again 
     num.cell.types[i] = dim(DF_cors[[i]])[1]
   }
-
+  print("Finished reading expr reg analysis files")
+  
   if(fig.num %in% c(1, 11, 111))  #### Figure 1 (all) or 11 (fold-change) or 111 (abs-fold-change)
     draw_cor_bars_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir)
 
@@ -35,6 +36,7 @@ draw_expr_reg_figures <- function(data.types, expr.stat.y = "mean", expr.stat.x 
     if(is.null(tissue) | is.null(cell_type)){
       stop("Tissue or cell type not provided")
     }
+    print("Get inside Fig 2:")
     draw_cor_scatters_figure(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types, 
                                          tissue = "Lung", cell_type = "type II pneumocyte")
   }  # end if figure 2 or 22
@@ -43,14 +45,14 @@ draw_expr_reg_figures <- function(data.types, expr.stat.y = "mean", expr.stat.x 
   
 
   if(fig.num == 99)  # New: draw heatmap of correlations of all gene features. Need to compute all pairwise correlations across tissues and cell types 
-    draw_heatmap_cor_figure(fig.num, data.types, feature.types, analysis.figures.dir)
+    draw_heatmap_cor_figure(fig.num, data.types, feature.types, analysis.figures.dir,  tissue = "Lung")
   
   #    ggsave(paste(analysis.figures.dir,"mean FC vs selection correlation across all cell types.png",sep = "/"),height = 6,width = 9)
 }
 
 
 
-draw_heatmap_cor_figure <- function(fig.num, data.types, feature.types, analysis.figures.dir)
+draw_heatmap_cor_figure <- function(fig.num, data.types, feature.types, analysis.figures.dir, tissue = "Lung")
 {
   gene.features <- read_gene_features(feature.names=feature.types)
   expr.stats <- extract_expression_statistics(data.types[1], tissue, expression.stats = "mean") # extract means
@@ -120,6 +122,8 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
 draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
                                      tissue = "Lung", cell_type = "type II pneumocyte")
 {
+  xxxx = 3434
+  print("Start fig 2:")
   n.datas <- length(data.types)
   gene_features = read_gene_features(feature.types) 
   for(feature.type in feature.types) # Here plot each feature vs. mean expression, not just selection
@@ -171,8 +175,10 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
       } else
         cell_types_categories = meta.data[[tissue.ind]]$cell_ontology_class  # the names of the different cell-types
       k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
-      
+      print("Load SC:")
+      print(paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[i]], ".rds"))
       SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[i]], ".rds")) # Current (Lung) tissue seurat object
+      print("Loaded SC:")
       list2env(tissue_to_age_inds(data.types[i], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
       counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lung tissue
       SC_gene_name = toupper(rownames(SC)) # genes names in upper case letters
@@ -277,7 +283,7 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
   }
   
   
-  n.features <- 2 #  n.features <- length(feature.types[1:5])
+  n.features <- 5 #  n.features <- length(feature.types[1:5])
   all.show.columns <- c()
   for(s in feature.types[1:n.features])
     for(age.group in c(age.groups, "fc", "deltaYO"))
