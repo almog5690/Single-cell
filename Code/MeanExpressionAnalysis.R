@@ -4,7 +4,7 @@ library(Seurat)
 # Perform mean expression analysis for single cell RNA seq dataset
 expression_regression_analysis <- function(data.type, expression.stat.y = c("mean"), # dependent variable
                                      expression.stat.x = c(), feature.types = c("selection"), # covariates
-                                     force.rerun = FALSE) {
+                                     force.rerun = FALSE,do.interaction = FALSE) {
   # Set data directories: 
   set_data_dirs(data.type)
   reg.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.type, '.', expression.stat.y, '.vs.', 
@@ -253,6 +253,22 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       reg.ctr = reg.ctr + 1
       
       cell.type.ctr = cell.type.ctr+1  # update counter
+      
+      if(do.interaction)
+      {
+        cur.gene.ind = expr.stats$DF.expr.stats[[k]]$overdispersion_old > -1
+        
+        interaction_data = data.frame("OD" = c(expr.stats$DF.expr.stats[[k]]$overdispersion_old,expr.stats$DF.expr.stats[[k]]$overdispersion_young),
+                                      "Mean" = c(expr.stats$DF.expr.stats[[k]]$mean_old,expr.stats$DF.expr.stats[[k]]$mean_young),
+                                      "Age" = rep(c("Old","Young"),each = length(expr.stats$DF.expr.stats[[k]]$mean_old)))
+
+        
+        interaction_data = interaction_data[rep(cur.gene.ind,2),]
+        interaction_data = cbind(interaction_data,rbind(cur_gene_features_mat[cur.gene.ind,],cur_gene_features_mat[cur.gene.ind,]))
+        
+        inter_reg = lm(OD ~ .^2,data = interaction_data)
+        
+      }
     }  # end loop on cell-types in tissue
   }  # end loop on tissues
   
