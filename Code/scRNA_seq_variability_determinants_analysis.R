@@ -88,6 +88,7 @@ if(preprocess)
 
 if(reg.analysis)  # regression with different covariates and response expression variables 
 {
+  feature.types = c("gene.len", "selection")  # simplify to get a regression analysis similar to correlation analysis!!!
   for(data.type in data.types)
   {
     DF_cor_mean = expression_regression_analysis(data.type, feature.types = feature.types, force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
@@ -96,7 +97,6 @@ if(reg.analysis)  # regression with different covariates and response expression
 #                                                           force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
   }
 }
-  
 
 # Plot figures: 
 if(reg.figures)
@@ -109,9 +109,6 @@ if(reg.figures)
     draw_expr_reg_figures(c("CR.Rat"), expr.stat.y = "mean", expr.stat.x = c(),
                           fig.num, feature.types = feature.types, # c("selection", "gene.len"), 
                     tissue = "Liver", cell_type = "7") # need different cell-type example for Rat !! 
-  
-  draw_expr_reg_figures(c("TM.facs", "TM.droplet", "CR.Rat"), expr.stat.y = "mean", expr.stat.x = c(), 66, feature.types = feature.types)
+  draw_expr_reg_figures(c("TM.facs", "TM.droplet", "CR.Rat"), expr.stat.y = "mean", expr.stat.x = c(), 66, feature.types = feature.types, n.features=5)
   draw_expr_reg_figures(c("TM.facs", "TM.droplet", "CR.Rat"), expr.stat.y = "overdispersion", expr.stat.x = c("mean"), 666, feature.types = feature.types)
 }
-
-
