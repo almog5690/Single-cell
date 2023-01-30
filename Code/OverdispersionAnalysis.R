@@ -1,7 +1,6 @@
 library(Seurat)
 library(BASiCS)
 
-a
 
 # General function for overdispersion analysis for all data types 
 overdispersion_analysis <- function(data.type, force.rerun = FALSE, attribute = "selection") {
