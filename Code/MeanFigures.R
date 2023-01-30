@@ -64,20 +64,19 @@ draw_heatmap_cor_figure <- function(fig.num, data.types, feature.types, analysis
     mean.expr.list[[i]] = expr.stats$DF.expr.stats[[expr.stats$cells_ind[i]]][,"mean_all"]
     names(mean.expr.list[[i]]) = rownames(expr.stats$DF.expr.stats[[expr.stats$cells_ind[i]]])
   }
-  print("Names:")
+#  print("Names:")
   names(mean.expr.list) <- expr.stats$cell_types_categories[expr.stats$cells_ind]
-  print("list.to::")
+#  print("list.to::")
   df.features.and.mean.expr <- list_to_common_dataframe(c(mean.expr.list, gene.features))
   
-  print("Dim:")
-  print(dim(df.features.and.mean.expr))
-  print("cor::")
-  save("df.features.and.mean.expr", file="tmp_cor.RData")
+#  print("Dim:")
+#  print(dim(df.features.and.mean.expr))
+#  print("cor::")
+#  save("df.features.and.mean.expr", file="tmp_cor.RData")
   features.and.mean.expr.cor.mat = cor(df.features.and.mean.expr, use = "complete.obs") 
-  print("corrplot::")
+#  print("corrplot::")
   
   ggcorrplot(features.and.mean.expr.cor.mat)
-  
   ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types[1], collapse = "_"), 
                 '.', paste(feature.types, collapse = "_"), '.', tissue, '.png'), height = 6,width = 9)  # Modify name to get figure  
 }
@@ -91,8 +90,6 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
   group.str = switch(as.character(fig.num), "1" = "all", "11" = "fc", "111" = "fc_abs")  #  == 1) "all" else "fc"
   for(feature.type in feature.types) # Here plot each feature vs. mean expression, not just selection
   {
-    print("Feature:")
-    print(feature.type)
     cor.col <- paste0(feature.type, "_", group.str, "_cor")
     pval.col <- paste0(feature.type, "_", group.str, "_pval")
     # adding cell type variable
@@ -108,7 +105,6 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
       DF_cors[[i]]$x.plot <- unlist(DF_cors[[i]][cor.col])
       
       # Joint multiple plots !!! 
-      print("ggplot:")
       p_feature_vs_mean_bar[[i]] = ggplot(DF_cors[[i]], aes(y = y.plot, x = x.plot, fill = fill.plot)) + 
         geom_bar(stat = "identity") + theme_classic() +
         scale_fill_gradient2(high = "red", mid = "white",low = "blue",midpoint = -log10(0.05)) +
@@ -173,8 +169,9 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
         geom_abline(slope = 1, intercept = 0, col = "red") +
         geom_point(data = textdf, aes(x = x.plot , y = y.plot), color = "orangered", fill = "orange", size = 3) +
         labs(title = paste0(processed.files.str[data.types[i]], 
-                            ", Sign test: ", num.old.bigger.young, "/", num.cell.types[i], " Pval=", signif(num.old.bigger.young.pval, 3)), 
-             x = paste0("Young", fig.str), y = paste0("Old ", fig.str)) +
+                            ", Sign test: ", num.old.bigger.young, "/", num.cell.types[i], 
+                            " Pval=", signif(num.old.bigger.young.pval, 3)), 
+             x = paste0("Young ", fig.str), y = paste0("Old ", fig.str)) +
         theme(plot.title = element_text(size = 10), plot.subtitle = element_text(size = 8), axis.title = element_text(size = 10),legend.position = "none")
       
       ## highlighted cell (Lung Pneumocyte cell) type Mean vs selection for both age groups
@@ -254,8 +251,10 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
         facet_wrap(~Age, labeller = labeller(Age = age_name)) + 
         geom_smooth(method = "lm",se = F,data = df_4, aes(x = Mean, y = gene.feature, color = Age)) +
         scale_color_manual(values = c("Old"="#00ba38", "Young"="#f8766d")) +
-        labs(title = paste(samples$organs[i],cell_types_categories[k], sep = ": "), x = "Mean expression rank", y = paste0(feature.type, " rank")) + 
-        theme(plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10),strip.text.x = element_text(size = 8,face = "bold")) +
+        labs(title = paste(samples$organs[i],cell_types_categories[k], sep = ": "), 
+             x = "Mean expression rank", y = paste0(feature.type, " rank")) + 
+        theme(plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),
+              axis.title = element_text(size = 10),strip.text.x = element_text(size = 8,face = "bold")) +
         guides(shape = guide_legend(order = 2),col = guide_legend(order = 1))
     } # end loop on data types 
     
@@ -263,8 +262,15 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
     multi.plot <- ggarrange(plotlist = c(rbind(p_denst, p3)), nrow = 2, ncol = n.datas) # all in the same row 
     annotate_figure(multi.plot, top = text_grob(paste0("Genes ", feature.type, " and mean correlation"), 
                                                 color = "black", face = "bold", size = 14))
-    ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
+    
+    if(fig.num == 2)  # marginal correlation
+      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
                   '.',  feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
+    else # regression coefficient, context matters
+      ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
+                    '.', paste(feature.types, collapse = "_"), 
+                    '._beta_', feature.type, '.png'), height = 6,width = 9)  # Modify name to get figure  
+    
   }  # loop on explanatory features 
 } # End function for plotting fig. 2,22
 
@@ -328,6 +334,7 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
     theme(axis.text.x = element_text(angle = 90,hjust=0))
 
   ggsave(paste0(analysis.figures.dir, "Mean.Figure", fig.num, '.', paste(data.types, collapse = "_"),
+                '.', paste(feature.types, collapse = "_"), 
                 '.png'), height = 6,width = 9)  # Modify name to get figure  
   
 }

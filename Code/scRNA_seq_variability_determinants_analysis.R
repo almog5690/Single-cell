@@ -88,7 +88,7 @@ if(preprocess)
 
 if(reg.analysis)  # regression with different covariates and response expression variables 
 {
-  feature.types = c("gene.len", "selection")  # simplify to get a regression analysis similar to correlation analysis!!!
+#  feature.types = c("gene.len", "selection")  # simplify to get a regression analysis similar to correlation analysis!!!
   for(data.type in data.types)
   {
     DF_cor_mean = expression_regression_analysis(data.type, feature.types = feature.types, force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function

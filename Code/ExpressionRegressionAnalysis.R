@@ -179,8 +179,20 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
 #                          as.data.frame(cur_gene_features_mat[which(cur.gene.ind),]))  # Take log of fold-change. Maybe take difference? (they're after log)
 #        print(paste("Finished Run reg:", age.group))
         
-        DF_cor[cell.type.ctr, beta.inds[seq((reg.ctr-1)*n.features+1, 5*n.features, 5)]] <- reg.model$coefficients[-1] # get coefficients (excluding intercept)
-        DF_cor[cell.type.ctr, beta.pvals.inds[seq((reg.ctr-1)*n.features+1, 5*n.features, 5)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
+#        print("beta inds:")
+#        print(beta.inds)
+#        print("beta pvals inds:")
+#        print(beta.pvals.inds)
+        
+#        print(paste("reg.ctr: ", reg.ctr, " n.features: ", n.features))
+#        print("Set reg. beta columns:")
+#        print(beta.inds[seq(reg.ctr, 5*n.features, 5)])
+#        print(colnames(DF_cor)[beta.inds[seq(reg.ctr, 5*n.features, 5)]])
+#        print("Set reg. beta-pvals columns:")
+#        print(beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)])
+#        print(colnames(DF_cor)[beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)]])
+        DF_cor[cell.type.ctr, beta.inds[seq(reg.ctr, 5*n.features, 5)]] <- reg.model$coefficients[-1] # get coefficients (excluding intercept)
+        DF_cor[cell.type.ctr, beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)]] <- summary(reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
         reg.ctr = reg.ctr + 1
       }
       
@@ -197,8 +209,8 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
                          data = as.data.frame(cur_reg_covariates_mat), na.action=na.exclude)
 #                         data = as.data.frame(cur_gene_features_mat[fc.gene.ind,]))  # Take log of fold-change. Maybe take difference? (they're after log)
 #      print("Finished reg fc:")
-      DF_cor[cell.type.ctr, beta.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
-      DF_cor[cell.type.ctr, beta.pvals.inds[((reg.ctr-1)*n.features+1):(reg.ctr*n.features)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
+      DF_cor[cell.type.ctr, beta.inds[seq(reg.ctr, 5*n.features, 5)]] <- fc.reg.model$coefficients[-1] # get p-values (excluding intercept)
+      DF_cor[cell.type.ctr, beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)]] <- summary(fc.reg.model)$coefficients[-1,4]  # get p-values (excluding intercept?)
       reg.ctr = reg.ctr + 1
       
       cell.type.ctr = cell.type.ctr+1  # update counter
