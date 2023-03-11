@@ -409,3 +409,12 @@ get_DVT_file_name <- function(data.type,tissue,cell_type)
   
   return(DVT.file.name)
 }
+
+
+tdif = function(r13,r23,r12,nsize){
+  
+  tdif = (r13 - r23)*sqrt((nsize-3)*(1+r12)/(2*(1-r13^2-r23^2-r12^2 + 2*r13*r23*r12)))
+  pdif = 2*(1-pt(abs(tdif),nsize-3)) 
+  
+  return(c(tdif,pdif))
+}
