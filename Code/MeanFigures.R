@@ -126,6 +126,7 @@ draw_cor_bars_figure <- function(fig.num, data.types, feature.types, DF_cors, an
 
 # Detailed regression of one cell type with two-dim density, and other young vs. old. scatter plots 
 # Plot colorful scatter 
+# Here use the new figure below signif_plot
 draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors, analysis.figures.dir, num.cell.types,
                                      tissue = "Lung", cell_type = "type II pneumocyte")
 {
@@ -133,6 +134,16 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
   gene_features = read_gene_features(feature.types) 
   for(feature.type in feature.types) # Here plot each feature vs. mean expression, not just selection
   {
+    
+    if(new.plus.fig)
+    {
+        plot(signif_plot(beta_young, beta_old, p_val_young, p_val_old, p_val_diff  ,corr = TRUE, data.type))
+#      ggsave( ... )
+        
+#          plot(signif)
+        next # continue to next loop iter
+    }
+    
     gene_name <- names(gene_features[[feature.type]])
     p3 <- p_denst <- vector("list", n.datas)
     for(i in 1:n.datas) {   
@@ -275,7 +286,9 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
 } # End function for plotting fig. 2,22
 
 
-# new: Boxplots for all correlations: 
+
+
+# New: Boxplots for all correlations: 
 # First top will be spearman correlation, second bottom will be beta regression coefficient
 # Separate figures for mean and overdispersion
 # 1. selection
@@ -339,8 +352,12 @@ draw_boxplot_cor_overview_figure <- function(fig.num, data.types, feature.types,
   
 }
 
-signif_plot <- function(beta_young,beta_old,p_val_young,p_val_old,p_val_diff
-                        ,corr = TRUE,data.type = "facs")
+
+
+# New: figure for showing significance of both each beta and their difference
+# corr - if TRUE, this is correlations or betas (changes axes text)
+signif_plot <- function(beta_young, beta_old, p_val_young, p_val_old, p_val_diff
+                        ,corr = TRUE, data.type = "facs", plot.flag = TRUE)
 {
   DF_signif = data.frame(beta_young,beta_old,"corr_diff_pval" = p_val_diff)
   
@@ -354,14 +371,14 @@ signif_plot <- function(beta_young,beta_old,p_val_young,p_val_old,p_val_diff
   DF_signif$cor_diff_pval_bh = p.adjust(DF_signif$corr_diff_pval,method = "BH")
   DF_signif$cor_diff_signif = ifelse(DF_signif$cor_diff_pval_bh < p_thresh,"Significant","Not_significant")
   
-  if(corr)
+  if(corr) # label of axes 
   {
     p_signif = ggplot(DF_signif,aes(beta_young,beta_young)) + 
       geom_point(aes(shape = which_signif,size = which_signif,color = cor_diff_signif)) + 
       geom_abline(slope = 1,intercept = 0,col = "black",linetype = "dashed") +
       labs(title = data.type,x = "Young cor",y = "Old cor") +
       theme(plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) + 
-      scale_shape_manual(values = c("Both" = "+","Neither" = "•","Old" = "|","Young" = "—"),
+      scale_shape_manual(values = c("Both" = "+","Neither" = "?","Old" = "|","Young" = "?"),
                          name = TeX(r'($\rho$ Signif.)')) +
       scale_size_manual(values = c(4.5,5,2.7,2),name = TeX(r'($\rho$ Signif.)')) +
       scale_color_manual(values = c("gray50","red"),name = TeX(r'($\Delta\rho$ Signif.)'),breaks = c("Not_significant","Significant") ,labels = c("False","True")) + 
@@ -374,13 +391,14 @@ signif_plot <- function(beta_young,beta_old,p_val_young,p_val_old,p_val_diff
       geom_abline(slope = 1,intercept = 0,col = "black",linetype = "dashed") +
       labs(title = data.type,x = TeX(r'(Young $\beta$)'),y = TeX(r'(Old $\beta$)')) +
       theme(plot.title = element_text(size = 10),plot.subtitle = element_text(size = 8),axis.title = element_text(size = 10)) + 
-      scale_shape_manual(values = c("Both" = "+","Neither" = "•","Old" = "|","Young" = "—"),
+      scale_shape_manual(values = c("Both" = "+","Neither" = "?","Old" = "|","Young" = "?"),
                          name = TeX(r'($\beta$ Signif.)')) +
       scale_size_manual(values = c(4.5,5,2.7,2),name = TeX(r'($\beta$ Signif.)')) +
       scale_color_manual(values = c("gray50","red"),name = TeX(r'($\Delta\beta$ Signif.)'),breaks = c("Not_significant","Significant") ,labels = c("False","True")) + 
       geom_hline(yintercept = 0,color = "black") +
       geom_vline(xintercept = 0,color = "black")
   }
-  plot(p_signif)
+  if(plot.flag)
+    plot(p_signif)  # optional ? 
   return(p_signif)
 }

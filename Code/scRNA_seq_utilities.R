@@ -242,7 +242,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       df.od = test@Results$Disp@Table
       df.od$GeneName = toupper(df.od$GeneName) # Uppercasing gene names
       df.od = df.od[!df.od$ResultDiffDisp %in% c("ExcludedFromTesting"),] # Filtering genes significant difference in mean expression
-    }
+    }  # end if overdispersion (read from BASiCS)
     
     for(age.group in age.groups)  # loop on age groups
     {
@@ -274,8 +274,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
               DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( # add regularization
                 (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] + filter.params$pseudo.count) / 
                   (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")] + filter.params$pseudo.count)) # Take only filtered cells. why? 
-          } else
-            # Repeat for all age groups and features 
+          } else             # Repeat for all age groups and features 
             DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
         }
         if(stat == "overdispersion")
@@ -285,7 +284,12 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                           "old" = "Disp1", 
                           "young" = "Disp2", 
                           "fc" = "DispFC")
-          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]
+          # Find common gene indices, and intersect. Copy in the right order!!! 
+          common.od.gene.names = intersect(toupper(names(cur.gene.ind)), toupper(df.od$GeneName))
+          rownames(df.od) <- df.od$GeneName
+          DF.expr.stats[[cell.type]][common.od.gene.names  , paste0(stat, "_", age.group)] <- df.od[common.od.gene.names, od.str]  # Copy overdispersion information 
+          
+#          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]  # Copy overdispersion information 
         }
       }
     } # end loop on age groups    
@@ -346,17 +350,30 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
 }
 
 
-# Get indices of samples 
+# Get indices of samples (old, young ..)
+# Input: 
+# data.type - which dataset
+# organ - tissue name
+# age.groups - set groups for young and old
+# meta.data - structure for meta data information
 tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set specific ages for all age groups in all datasets
-  young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
-  old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses
-  if(sum(old.ind) == 0){ # Empty
-    old.ind = c(meta.data$age %in% age.groups$old_ages_2)
-  }
-  if((data.type == "TM.droplet") & (organ=="Lung")){ # special tissue for droplet (which?). Should move this line
-    old.ind = meta.data$age %in% c("18m","21m")
-  }
-  n_cell <- length(meta.data$age)
+  if(data.type == "Age.Anno")  # ignore groups and meta data. Remove very young. Set middle group as 'young'
+  {
+    young.ind = grepl("mid",Idents(SC))
+    old.ind = grepl("old",Idents(SC))
+    n_cell <- length(Idents(SC))
+  } else {
+    young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
+    old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses
+    if(sum(old.ind) == 0){ # Empty
+      old.ind = c(meta.data$age %in% age.groups$old_ages_2)
+    }
+    if((data.type == "TM.droplet") & (organ=="Lung")){ # special tissue for droplet (which?). Should move this line
+      old.ind = meta.data$age %in% c("18m","21m")
+    }
+    n_cell <- length(meta.data$age)
+    
+  } # if human
   all.ind = rep(TRUE, n_cell)
   return(list(young.ind=young.ind, old.ind=old.ind, all.ind=all.ind))
 }
@@ -387,14 +404,20 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 }
 
 
-get_DVT_file_name <- function(data.type,tissue,cell_type)
+# Determine file name for BASiCS data files 
+get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
   # BASiCS directory and file names
   if(data.type == "CR.Rat"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/CR.Rat/chains/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/CR.Rat/DVT/')
+    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/chains/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/DVT/')
     DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
     
+  }
+  if(data.type == "Age.Anno"){ # New human data 
+    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/chains/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/DVT/')
+    DVT.file.name = paste0(basics.DVT.dir, paste("DVT", tissue,cell_type, "same-mean.RData"))
   }
   if(data.type == "TM.droplet"){
     basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/chains/TM.droplet/')
@@ -411,10 +434,19 @@ get_DVT_file_name <- function(data.type,tissue,cell_type)
 }
 
 
-tdif = function(r13,r23,r12,nsize){
-  
+# Function for testing the difference between two Spearman correlations 
+spearman_dif_t = function(r13, r23, r12, nsize){
   tdif = (r13 - r23)*sqrt((nsize-3)*(1+r12)/(2*(1-r13^2-r23^2-r12^2 + 2*r13*r23*r12)))
   pdif = 2*(1-pt(abs(tdif),nsize-3)) 
-  
   return(c(tdif,pdif))
 }
+
+
+# Function for testing the difference between two regression coefficients (TBD!)
+beta_diff_t = function(beta_1, X, Y)
+{
+  beta.diff <- 0
+  return(True)  
+}
+  
+  
