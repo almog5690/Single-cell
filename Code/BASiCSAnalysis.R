@@ -5,6 +5,12 @@ library(BASiCS)
 
 # Run BASiCS for one tissue: loop on all cell types within the tissue 
 BASiCS_analysis_tissue <- function(data.type, organ){
+  groups = dataset_to_age_groups(data.type)
+  samples <- get_tissue_file_names(data.type)
+  organ.ind = which(samples$organs == organ)
+  meta.data = get_meta_data(data.type)
+  
+  
   read.file <- paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")
   #  print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
   SC = readRDS(file = read.file) # Current tissue seurat object
@@ -27,7 +33,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   {
     cell_types = SC@meta.data$cell.ontology.class # Cell types vector
     n_cell_types = max(SC@meta.data$cell.ontology.class) # number of cell types
-    cell_types_categories = meta.data[[i]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+    cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
   }
   if(data.type == "Age.Anno"){ # Human data 
     cell_types = (SC$CT)
@@ -74,7 +80,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     if(data.type == "Age.Anno")
       batch = SC$orig.ident # using individual id as batch
     
-    DVT.file.name = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
+    DVT = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
     
     # We preform the BASiCS only if both age group have more then 1 mouse  
     if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
@@ -85,25 +91,27 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & young.ind],
                                 BatchInfo = batch[cell_types == ct_name & young.ind]) 
       
+      print(paste0("Chains directory: ",  DVT$basics.chains.dir))
       # Creating BASiCS chain for old and young mice
       chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
-                              WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = basics.chains.dir)
+                              WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
       chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
-                                WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = basics.chains.dir)
+                                WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
       
+      print(paste0("Start BASICS TEST: : "))
       # Differential over-dispersion test - only on genes without significant difference in mean expression
       test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
                            GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
                            EpsilonM = 0, EpsilonD = log2(1.5),
                            EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
       
-      save(test,file = DVT.file.name) 
+      save(test,file = DVT$DVT.file.name) 
       
     } # end if 
   }  # end loop on cell types
 }  
 
-# Run BASiCS for one tissue  
+# Run BASiCS for one data type (loop on tissues)  
 BASiCS_analysis <- function(data.type){
   # Set data directories: 
   set_data_dirs(data.type)

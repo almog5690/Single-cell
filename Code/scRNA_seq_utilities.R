@@ -409,45 +409,46 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
   # BASiCS directory and file names
   if(data.type == "CR.Rat"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/chains/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/DVT/')
+    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/chains/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/DVT/')
     DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
     
   }
   if(data.type == "Age.Anno"){ # New human data 
-    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/chains/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/DVT/')
+    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/chains/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/DVT/')
     DVT.file.name = paste0(basics.DVT.dir, paste("DVT", tissue,cell_type, "same-mean.RData"))
   }
   if(data.type == "TM.droplet"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/chains/TM.droplet/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/DVT/TM.droplet/')
+    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.droplet/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.droplet/')
     DVT.file.name = paste0(basics.DVT.dir,paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
   }
   if(data.type == "TM.facs"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/chains/TM.facs/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/DVT/TM.facs/')
+    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
+    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
     DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
   }
   
-  return(DVT.file.name)
+  return(list(DVT.file.name=DVT.file.name, basics.chains.dir = basics.chains.dir, basics.DVT.dir = basics.DVT.dir))
 }
 
 
-<<<<<<< HEAD
+
+
+
+
+
+#######################################################################
 # Function for testing the difference between two Spearman correlations 
-spearman_dif_t = function(r13, r23, r12, nsize){
-=======
+#spearman_dif_t = function(r13, r23, r12, nsize){
 tdif <- function(r13,r23,r12,nsize)
 {
-  
->>>>>>> b715057d1d329cf285e63979830a774738f9c8b7
   tdif = (r13 - r23)*sqrt((nsize-3)*(1+r12)/(2*(1-r13^2-r23^2-r12^2 + 2*r13*r23*r12)))
   pdif = 2*(1-pt(abs(tdif),nsize-3)) 
   return(c(tdif,pdif))
 }
 
-<<<<<<< HEAD
 
 # Function for testing the difference between two regression coefficients (TBD!)
 beta_diff_t = function(beta_1, X, Y)
@@ -457,8 +458,7 @@ beta_diff_t = function(beta_1, X, Y)
 }
   
   
-=======
-Interaction_reg <- fuunction(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,gene_feature,
+Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,gene_feature,
                              Organ,Cell_type,feature_name)
 {
   
@@ -490,4 +490,3 @@ Interaction_reg <- fuunction(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,
   return(disp_reg_data_inter)
 }
 
->>>>>>> b715057d1d329cf285e63979830a774738f9c8b7

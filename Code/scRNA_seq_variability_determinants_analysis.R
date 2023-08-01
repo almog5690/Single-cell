@@ -8,10 +8,10 @@ library(ggpointdensity)
 library(ggpubr)
 
 # Data types
-data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno") 
-data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno")   # Names of directories 
+data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC") 
+data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno", "HumanBlood")   # Names of directories 
 names(data.dirs) = data.types 
-processed.files.str <- c("facs", "drop", "rat", "anno") # match these (then rds)
+processed.files.str <- c("facs", "drop", "rat", "anno", "SC") # match these (then rds)
 names(processed.files.str) = data.types
 data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
 
@@ -23,6 +23,7 @@ if(user.name == "Almog")
   main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
   main.data.dir = "C:/Users/User/Google Drive/SingleCell/"  # Change to directory with all the data
 } else # Or 
+if(user.name == "Or")
 {
  
 #  G:\.shortcut-targets-by-id\1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx\SingleCell   
@@ -33,9 +34,14 @@ if(user.name == "Almog")
 #  main.data.dir = "G:/My Drive/Students/AlmogYair/SingleCell/"
   main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/"  # give shortcut (problem: may change!)
                                               
-  
   #   paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
 }
+if(user.name == "Unix")
+{
+  main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+  main.data.dir = "/sci/labs/orzuk/orzuk/projects/SingleCell/"  # Change to directory with all the data
+}
+
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
 
@@ -49,6 +55,8 @@ gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')
 #basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
 
 setwd(code.dir)
+
+set_data_dirs(data.type)  # set all directories for this data type
 
 
 # Set analysis types we want to do: 
@@ -131,9 +139,6 @@ if(for.paper)
   
 } else # here do custom analysis 
 {
-  
-  
-  
   if(reg.analysis)  # regression with different covariates and response expression variables 
   {
     #  feature.types = c("gene.len", "selection")  # simplify to get a regression analysis similar to correlation analysis!!!
