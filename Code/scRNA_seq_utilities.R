@@ -44,6 +44,10 @@ get_tissue_file_names <- function(data.type)
     organs = c("Aorta","BAT","BM","Brain","Muscle","Skin","WAT","Kidney","Liver")
     file.names = paste(organs,"rds", sep = ".")
   }
+  if(data.type == "Blood_SC"){
+    organs = "Blood"
+    file.names = "Blood.SC.rds"
+  }
   return(list(file.names = file.names, organs = organs))
 }
 
@@ -345,6 +349,14 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
     young_str = "young"
     old_str = "old"
   }
+  if(data.type == "Blood_SC"){
+    young_ages = "Young" # The ages of the young mice 
+    old_ages_1 = "Old"
+    test_str = "BloodHuman"
+    young_str = "young"
+    old_str = "old"
+  }
+  
   return(list(young_ages = young_ages, old_ages_1 = old_ages_1, old_ages_2 = old_ages_2, 
               test_str = test_str, young_str = young_str, old_str = old_str))
 }
