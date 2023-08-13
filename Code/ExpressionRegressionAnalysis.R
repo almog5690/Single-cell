@@ -75,7 +75,8 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
   print("expression.stats")
   print(expression.stats)
   for(i in 1:length(samples$organs)){  # loop on organs 
-    print(samples$organs[i])
+    print(paste0("Extract expression matrix for ", samples$organs[i]))
+    
     
     # New: use utility to extract statistics: can be very heavy for overdispersion
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 

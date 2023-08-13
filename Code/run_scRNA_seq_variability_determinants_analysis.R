@@ -19,13 +19,13 @@ if(preprocess)
 # (4: Figure 5 of paper: BASicS results, overdispersion)
 
 
-
-TRY.TM.DROPLET = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+data.type= "TM.Droplet"
+TRY.TM.DROPLET = expression_regression_analysis("TM.droplet", feature.types = paper.features[[i]], 
                                expression.stat.x = paper.expression.stat.x[i], expression.stat.y = paper.expression.stat.y[i], 
                                force.rerun = TRUE)
 
 data.type = "Blood_SC"
-TRY.HUMAN.BLOOD = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+TRY.HUMAN.BLOOD = expression_regression_analysis("Blood_SC", feature.types = paper.features[[i]], 
                                                 expression.stat.x = paper.expression.stat.x[i], expression.stat.y = paper.expression.stat.y[i], 
                                                 force.rerun = TRUE)
 

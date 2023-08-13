@@ -179,8 +179,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   if(file.exists(expression.statistics.outfile) & (force.rerun==FALSE))
   {
-#    print("Loading file!")
-#    print(expression.statistics.outfile)
+    print("Loading file!")
+    print(expression.statistics.outfile)
     load(expression.statistics.outfile)
     return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
   }
@@ -205,6 +205,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   if(length(SeuratOutput)==0) # empty, on first time the loop runs 
     SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
     # SeuratOutput = readRDS(file = "D:/Human-Blood/Blood.SC.rds") # HARD-CODED Current tissue Seurat object
+  
+  print("Finished reading Seurat object")
   
   list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
   counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
@@ -264,13 +266,13 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                        "young" = young.ind, 
                        "old" = old.ind, 
                        "fc" = young.ind)  & (cell_types==cells_ind[cell.type]) # take only cell type . Assume that cell typea are numbers starts with zero 
+      cur.cell.ind[is.na(cur.cell.ind)] = FALSE
       # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes FILTER BY ALL!!!
       if(age.group == "fc")  #union young or old 
         cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, young.ind]) > filter.params$min.count |
         (rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )
       else
         cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, all.ind]) > filter.params$min.count # cur.cell.ind
-      
       names(cur.gene.ind) = toupper(names(cur.gene.ind))
 
       # Next, extract different statistics 
