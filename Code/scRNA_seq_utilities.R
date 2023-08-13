@@ -55,19 +55,22 @@ get_tissue_file_names <- function(data.type)
 # Filter cells from an expression matrix (not used yet. Should be part of analysis)
 filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 {
-  n_cell_types = max(cell_types) # Number of cell types
+  unique_cell_types = unique(cell_types)
+  
+  n_cell_types = length(unique_cell_types)  #  max(cell_types) # Number of cell types
   erase = vector()
   
-  for(ct_ind in 0:n_cell_types){ # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
-    if(sum(cell_types==ct_ind) < filter.params$min.cells.total |
-       sum(cell_types==ct_ind & young.ind) < filter.params$min.cells.per.age |
-       sum(cell_types==ct_ind & old.ind) < filter.params$min.cells.per.age){
-      erase = c(erase, ct_ind+1)
-      next()
-    }
+  for(j in 1:n_cell_types){ # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
+      ct_ind = unique_cell_types[j]
+      if(sum(cell_types==ct_ind, na.rm=TRUE) < filter.params$min.cells.total |
+         sum(cell_types==ct_ind & young.ind, na.rm=TRUE) < filter.params$min.cells.per.age |
+         sum(cell_types==ct_ind & old.ind, na.rm=TRUE) < filter.params$min.cells.per.age){
+        erase = c(erase, j)
+        next()
+      }
   }
-  cells_ind = c(1:(n_cell_types+1))[-erase]
-  if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1))
+  cells_ind = unique_cell_types[-erase] #  cells_ind = c(1:(n_cell_types+1))[-erase]
+  if(length(cells_ind) == 0) cells_ind = unique_cell_types # (1:(n_cell_types+1))
   return(cells_ind) # indices of cells that we keep 
 }
 
@@ -200,8 +203,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
 #  print("Load tissue, file name:")
 #  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
   if(length(SeuratOutput)==0) # empty, on first time the loop runs 
-    # SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
-    SeuratOutput = readRDS(file = "D:/Human-Blood/Blood.SC.rds") # Current tissue Seurat object
+    SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+    # SeuratOutput = readRDS(file = "D:/Human-Blood/Blood.SC.rds") # HARD-CODED Current tissue Seurat object
   
   list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
   counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
@@ -212,6 +215,10 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   if(data.type == "CR.Rat"){ # Convert to dummy variables 
     cell_types = as.numeric(SeuratOutput@meta.data$cell_types) # Cell types vector
     cell_types_categories = levels(SeuratOutput$cell_types)
+  } else if (data.type == "Blood_SC")
+  {
+    cell_types = SeuratOutput@meta.data$CT # Cell types vector
+    cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
   } else
   {
     cell_types = SeuratOutput@meta.data$cell.ontology.class # Cell types vector
@@ -220,7 +227,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)  #  unique(cell_types)+1 # NO FILTERING NOW !!!
   n.cell.types <- length(cells_ind) # number of cell types in tissue
   
-  for(cell.type in cells_ind)  # First load data if not loaded already 
+  for(cell.type in 1:length(cells_ind))  # First load data if not loaded already 
   {
     DF.expr.stats[[cell.type]] <- as.data.frame(matrix(NA ,nrow = n.genes, ncol = length(stats.col.names))) # n.stats*n.groups+1) # Set negatives 
     colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
@@ -256,7 +263,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                        "all" = all.ind, 
                        "young" = young.ind, 
                        "old" = old.ind, 
-                       "fc" = young.ind)  & (cell_types==cell.type-1) # take only cell type 
+                       "fc" = young.ind)  & (cell_types==cells_ind[cell.type]) # take only cell type . Assume that cell typea are numbers starts with zero 
       # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes FILTER BY ALL!!!
       if(age.group == "fc")  #union young or old 
         cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, young.ind]) > filter.params$min.count |
@@ -376,7 +383,16 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
     young.ind = grepl("mid",Idents(SC))
     old.ind = grepl("old",Idents(SC))
     n_cell <- length(Idents(SC))
-  } else {
+  } else if(data.type == "Blood_SC")
+  {
+    young.ind = c(meta.data$Age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
+    old.ind = c(meta.data$Age %in% age.groups$old_ages_1) # index for cells that came from old mouses
+    if(sum(old.ind) == 0){ # Empty
+      old.ind = c(meta.data$Age %in% age.groups$old_ages_2)
+    }
+    n_cell <- length(meta.data$age)
+  } else
+  {
     young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses
     if(sum(old.ind) == 0){ # Empty
@@ -386,7 +402,6 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
       old.ind = meta.data$age %in% c("18m","21m")
     }
     n_cell <- length(meta.data$age)
-    
   } # if human
   all.ind = rep(TRUE, n_cell)
   return(list(young.ind=young.ind, old.ind=old.ind, all.ind=all.ind))
