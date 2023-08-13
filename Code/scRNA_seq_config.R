@@ -7,9 +7,11 @@ library(colorRamps)
 library(ggpointdensity)
 library(ggpubr)
 
-if(!exists(user.name))  # set default values 
+source("scRNA_seq_utilities.R")
+
+if(!exists('user.name'))  # set default values 
   user.name = "Or" #  "Almog"  # Or # Unix 
-if(!exists(data.type))  # set default values 
+if(!exists('data.type'))  # set default values 
   data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
 
 
@@ -91,4 +93,9 @@ source("OverdispersionFigures.R")
 
 # Features to examine (currently, only the first two are implemented)
 feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG")  # These aren't ready yet: "GC", "CpG%",  "gene.age", )
+
+# Actual regression runs for the paper: 
+paper.expression.stat.y <- c("mean", "mean", "overdispersion", "overdispersion", "overdispersion")
+paper.expression.stat.x <- c("",     "", "mean", "mean", "mean")
+paper.features <- list("gene.len", "selection", "gene.len", "selection", c("selection", "gene.len")) # last one of two feature covariates is for supp. info.
 

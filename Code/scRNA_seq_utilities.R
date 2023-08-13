@@ -156,7 +156,7 @@ list_to_common_dataframe <- function(l)
 # Compute features of expression (mean, overdispersion, variance ... )
 # for a given tissue/cell type
 # organ - what tissues
-# cell.types - which ones. Default: all types in a given tissue
+# cell.types - which ones. Default: all cell-types in a given tissue
 # expression.stats - which expression statistics to extract 
 # age.groups - compute for each group separately
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)

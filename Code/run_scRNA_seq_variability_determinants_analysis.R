@@ -18,11 +18,16 @@ if(preprocess)
 # Possible Different figure types: 1.young+old log-pval barplot, 2. young vs. old new-scatter, 3. fc log-pval barplot (same as 1?)
 # (4: Figure 5 of paper: BASicS results, overdispersion)
 
-# Actual regression runs for the paper: 
-paper.expression.stat.y <- c("mean", "mean", "overdispersion", "overdispersion", "overdispersion")
-paper.expression.stat.x <- c("",     "",    "mean", "mean", "mean")
-paper.features <- list("gene.len", "selection", "gene.len", "selection", c("selection", "gene.len")) # last one of two feature covariates is for supp. info.
 
+
+TRY.TM.DROPLET = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+                               expression.stat.x = paper.expression.stat.x[i], expression.stat.y = paper.expression.stat.y[i], 
+                               force.rerun = TRUE)
+
+data.type = "Blood_SC"
+TRY.HUMAN.BLOOD = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+                                                expression.stat.x = paper.expression.stat.x[i], expression.stat.y = paper.expression.stat.y[i], 
+                                                force.rerun = TRUE)
 
 if(for.paper)
 {

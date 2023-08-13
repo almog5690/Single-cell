@@ -33,7 +33,7 @@ if(add.cell.types)
 
 if(run.basics)
   #  for(i in 1:length(organs)){
-  for(i in 5:5){
+  for(i in 5:5){ # run on Kidney 
     SC = readRDS(file = paste0(human.data.dir, paste(organs[i],"anno.rds",sep = ".")))
     BASiCS_analysis_tissue("Age.Anno", organs[i]) # Replace this by separate jobs 
   }

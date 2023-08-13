@@ -16,7 +16,7 @@ library(Seurat)
 #        - Each column corresponds to a beta/correlation coefficient, or a p-value. There are regression and correlation analyses. 
 # 
 expression_regression_analysis <- function(data.type, expression.stat.y = c("mean"), # dependent variable
-                                     expression.stat.x = c(), feature.types = c("selection"), # covariates. Why two kinds? 
+                                     expression.stat.x = "", feature.types = c("selection"), # covariates. Why two kinds? 
                                      force.rerun = FALSE) {
   # Set data directories: 
   set_data_dirs(data.type)
@@ -68,8 +68,8 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
   }
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names))) # start with empty data-frame. Add cell types that work
   cell.type.ctr <- 1
-  if(expression.stat.x == "") # load expression statistics. No expression covariates
-    expression.stats <- c(expression.stat.y,  expression.stat.x) 
+  if(length(expression.stat.x)==0) # load expression statistics. No expression covariates
+    expression.stats <- c(expression.stat.y) 
   else  # load expression statistics including expression covariates
     expression.stats <- c(expression.stat.y,  expression.stat.x)
   print("expression.stats")
@@ -117,21 +117,21 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
             next
           }
           
-          print("len of features vector:")
-          print(length(names(cur_gene_features[[feature.type]])))
-          print("len of gene-expressed filtered:")
-          print(length(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)] ))
-          print("Gene expressed filtered:")
-          print(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)])
+#          print("len of features vector:")
+#          print(length(names(cur_gene_features[[feature.type]])))
+#          print("len of gene-expressed filtered:")
+#          print(length(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)] ))
+#          print("Gene expressed filtered:")
+#          print(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)])
           
-          print("cell ind:")
-          print(k)
-          print("Do cor test:")
-          print(age.group)
-          print("feature:")
-          print(feature.type)
-          print("len intersect:")
-          print(length(I_names))
+#          print("cell ind:")
+#          print(k)
+#          print("Do cor test:")
+#          print(age.group)
+#          print("feature:")
+#          print(feature.type)
+#          print("len intersect:")
+#          print(length(I_names))
           DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
                                   paste0(feature.type, "_", age.group, "_cor"))] <- 
             cor.test(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)], 
