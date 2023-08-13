@@ -200,7 +200,9 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
 #  print("Load tissue, file name:")
 #  print( paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")  )
   if(length(SeuratOutput)==0) # empty, on first time the loop runs 
-    SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+    # SeuratOutput = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object
+    SeuratOutput = readRDS(file = "D:/Human-Blood/Blood.SC.rds") # Current tissue Seurat object
+  
   list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
   counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
   n.genes <- dim(counts.mat)[1]  # same number of genes for all cell types (could have many NAs)

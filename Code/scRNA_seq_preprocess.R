@@ -36,12 +36,12 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
     }
   }
   if(data.type == "Blood_SC"){
-    meta.data = list("cell.ontology.class" = c("ABC", "CD14-MC", "CD14-MC-PPBP", "CD16-MC", "CD4-Naive",        
+    meta.data = list(list("cell_ontology_class" = c("ABC", "CD14-MC", "CD14-MC-PPBP", "CD16-MC", "CD4-Naive",        
                   "CD4-Naive-NECTIN1", "CD4-Tem", "CD4-Tm", "CD4-Treg", "CD8-CTL",          
                   "CD8-Naive", "CD8-Tem", "cDC", "Intermed-MC", "Megakaryocytes",   
                   "Memory-B-CRIP1", "Memory-B-IL32", "Naive-B", "Naive-B-NRGN", "NK-FCER1G",        
                   "NK-GZMH", "NK-GZMK", "NK-IL7R", "NK-S100A2", "NK-SELL",          
-                  "pDC", "Plasma", "RBC"))
+                  "pDC", "Plasma", "RBC")))
   }
   save(meta.data, file = meta.data.file)  
   return(meta.data)
