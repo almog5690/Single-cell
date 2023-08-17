@@ -112,6 +112,18 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 }  
 
 
+### For the Humen-Blood:
+data.type = "Blood_SC"
+organ = "Blood"
+cell_types = sC$CT
+ct_name = "ABC" ## cell type example
+counts.mat = as.matrix(SC@assays$RNA@counts)
+old.ind = SC$Age == "Old"
+young.ind = SC$Age == "Young"
+batch = SC$orig.ident
+
+test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
+
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
   
   # filtering the cell-types
