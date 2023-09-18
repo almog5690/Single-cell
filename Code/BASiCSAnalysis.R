@@ -13,7 +13,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   
   read.file <- paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")
   #  print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
-  SC = readRDS(file = read.file) # Current tissue seurat object
+  SC = readRDS(file = read.file) # Current tissue Seurat object
   counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
   list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
   
@@ -84,8 +84,12 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     
     # We preform the BASiCS only if both age group have more then 1 mouse  
     if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
+      print("TISSUE DIMS: COUNTS:")
+      print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
+      print("BATCH LEN: ")
+      print(length(batch[cell_types == ct_name & old.ind]))
       
-      # BASiCS data for old and young mice  
+      # BASiCS data for old and young individuals
       old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & old.ind],
                               BatchInfo = batch[cell_types == ct_name & old.ind]) 
       young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & young.ind],
@@ -112,20 +116,8 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 }  
 
 
-### For the Humen-Blood:
-data.type = "Blood_SC"
-organ = "Blood"
-cell_types = sC$CT
-ct_name = "ABC" ## cell type example
-counts.mat = as.matrix(SC@assays$RNA@counts)
-old.ind = SC$Age == "Old"
-young.ind = SC$Age == "Young"
-batch = SC$orig.ident
-
-test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
 
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
-  
   # filtering the cell-types
   if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
@@ -134,19 +126,32 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     return()
   }
   
+  print("Start BASICS CELL TYPE")
   # Filter genes with less then 10 reads for either age group
   old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
   young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
   expressed_genes = which(old_sum > 10 & young_sum > 10)
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
+  print("GOT DVT")
   
   if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
-    
+    print("Start BASICS CELL TYPE ANALYSIS")
+    cc = counts.mat[expressed_genes,cell_types == ct_name & old.ind]
+    print("OK COUNTS, dim cc:")
+    print(dim(cc))
+    bb = batch[(cell_types == ct_name) & old.ind]
+    print("OK BATCH, len bb:")
+    print(length(bb))
+    print(dim(counts.mat))
+    print(length(expressed_genes))
+    print(length(ct_name))
+    print(length(old.ind))
     # BASiCS data for old and young mice  
-    old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & old.ind],
-                            BatchInfo = batch[cell_types == ct_name & old.ind]) 
-    young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & young.ind],
+    old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, (cell_types == ct_name) & old.ind],
+                            BatchInfo = batch[(cell_types == ct_name) & old.ind]) 
+    print("Start YOUNG")
+    young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, cell_types == ct_name & young.ind],
                               BatchInfo = batch[cell_types == ct_name & young.ind]) 
     
     print(paste0("Chains directory: ",  DVT$basics.chains.dir))

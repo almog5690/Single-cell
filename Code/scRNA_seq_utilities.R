@@ -438,28 +438,50 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 # Determine file name for BASiCS data files 
 get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
+
+  if(data.type %in% c("TM.facs", "TM.droplet"))  # special case 
+  {
+    basics.dir <- paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/')  # This is already in the config !! 
+    basics.chains.dir =  paste0(basics.dir, 'chains/', data.type, "/")
+    basics.DVT.dir =  paste0(basics.dir, 'DVT/', data.type, "/")
+    if(data.type == "TM.droplet")
+      DVT.file.name = paste0(basics.DVT.dir, paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
+    else
+      DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
+  } else
+  {
+    basics.dir <- paste0(main.data.dir, 'Data/', data.type, 'BASiCS/')
+    basics.chains.dir =  paste0(basics.dir, 'chains/')
+    basics.DVT.dir =  paste0(basics.dir, 'DVT/')
+    DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
+  }  
+  
   # BASiCS directory and file names
-  if(data.type == "CR.Rat"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/chains/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/DVT/')
-    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
-    
-  }
-  if(data.type == "Age.Anno"){ # New human data 
-    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/chains/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/DVT/')
-    DVT.file.name = paste0(basics.DVT.dir, paste("DVT", tissue,cell_type, "same-mean.RData"))
-  }
-  if(data.type == "TM.droplet"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.droplet/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.droplet/')
-    DVT.file.name = paste0(basics.DVT.dir,paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
-  }
-  if(data.type == "TM.facs"){
-    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
-    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
-    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
-  }
+#  if(data.type == "CR.Rat"){
+#    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/chains/')
+#    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/DVT/')
+#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
+#  }
+#  if(data.type == "Age.Anno"){ # New human data 
+#    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/chains/')
+#    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/DVT/')
+#    DVT.file.name = paste0(basics.DVT.dir, paste("DVT", tissue,cell_type, "same-mean.RData"))
+#  }
+#  if(data.type == "TM.droplet"){
+#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.droplet/')
+#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.droplet/')
+#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
+#  }
+#  if(data.type == "TM.facs"){
+#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
+#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
+#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
+#  }
+#  if(data.type == "blood_SC"){
+#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
+#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
+#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
+#  }
   
   return(list(DVT.file.name=DVT.file.name, basics.chains.dir = basics.chains.dir, basics.DVT.dir = basics.DVT.dir))
 }
