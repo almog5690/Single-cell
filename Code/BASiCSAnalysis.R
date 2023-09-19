@@ -72,6 +72,12 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
     expressed_genes = which(old_sum > 10 & young_sum > 10)
     
+    print("Length expressed genes for tissue:")
+    print(length(expressed_genes))
+    print("Legth old, length young:")
+    print(c( sum(old_sum>10), sum(young_sum>10) ))
+    
+    
     # Dataset-specific code for individual cell type       
     if(data.type == "CR.Rat")
       batch = SC$orig.ident # using mouse id as batch
@@ -147,6 +153,12 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     print(length(expressed_genes))
     print(length(ct_name))
     print(length(old.ind))
+    
+    print("Length expressed genes for cell type:")
+    print(length(expressed_genes))
+    print("Legth old, length young:")
+    print(c( sum(old_sum>10), sum(young_sum>10) ))
+    
     # BASiCS data for old and young mice  
     old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, (cell_types == ct_name) & old.ind],
                             BatchInfo = batch[(cell_types == ct_name) & old.ind]) 
