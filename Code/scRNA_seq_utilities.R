@@ -75,10 +75,13 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 }
 
 
-# Read feature files (not used yet. NEXT ONE!!! )
+# Read feature files (selection, length, GC-content etc. )
 # Output will be a list with names being the genes, and values being numerical values.
 # Gene names are according to Ensembl (???)
+# Input: 
+# feature.names - list of features to read 
 # organism - allow multiple ones in the future (currently only mice supported)
+# force.rerun - default: false, otherwise always re-run to read and parse files 
 read_gene_features  <- function(feature.names, organism = "mice", force.rerun = FALSE)
 {
   gene.features.outfile <- paste0(main.data.dir, 'Data/', 'gene.features.', 
@@ -100,6 +103,14 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
       gene.names = toupper(select$gene) # making all the gene names in to upper case letters
       gene.values = select$pLI # the selection score vector
       names(gene.values) = gene.names # naming each score with the gene it belongs to
+    }
+    if(feature.name == "alpha.missense")  # new conservation metric! compare it to gnomad!!
+    {
+#      library(XLConnect)
+      alpha <- read.delim(paste0(gene.data.dir, "alpha_missense_science.adg7492_data_s4.txt"))
+      gene.names = toupper(alpha$gene) # making
+      gene.values = alpha$mean_am_pathogenicity
+      names(gene.values) = gene.names
     }
     if(feature.name %in% c("gene.len", "gene.length", "genes.len"))
     {
@@ -134,8 +145,8 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1
-  }  
-  save(gv, file=gene.features.outfile)   # Save dataframe to file ( Save also to excel? ) 
+  }  # end loop on different features   
+  save(gv, file=gene.features.outfile)   # Save dataframe to file in R format for faster reading next time  
   return(gv)
 }
 

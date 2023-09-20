@@ -2,9 +2,9 @@
 # Main script for analysis of single-cell gene-expression data
 data.type = "TM.facs"  # Blood_SC
 organ = "Aorta" # Blood (?) # smallest facs file, should be fastest 
-#ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
-#data.type = "Blood_SC"
-#organ = "Blood"
+ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
+data.type = "Blood_SC"
+organ = "Blood"
 
 run.tissue = FALSE
 run.celltype = !(run.tissue)
