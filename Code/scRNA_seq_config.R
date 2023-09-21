@@ -7,13 +7,11 @@ library(colorRamps)
 library(ggpointdensity)
 library(ggpubr)
 
-source("scRNA_seq_utilities.R")
 
 if(!exists('user.name'))  # set default values 
   user.name = "Or" #  "Almog"  # Or # Unix 
 if(!exists('data.type'))  # set default values 
   data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
-
 
 # Data types
 data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC") 
@@ -31,7 +29,6 @@ if(user.name == "Almog")
 } else # Or 
 if(user.name == "Or")
 {
- 
 #  G:\.shortcut-targets-by-id\1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx\SingleCell   
 #  G:\.shortcut-targets-by-id\1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx\SingleCell\GeneLevelData  
   # Directories 
@@ -39,7 +36,6 @@ if(user.name == "Or")
   #  main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/" 
 #  main.data.dir = "G:/My Drive/Students/AlmogYair/SingleCell/"
   main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/"  # give shortcut (problem: may change!)
-                                              
   #   paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
 }
 if(user.name == "Unix")
@@ -47,7 +43,6 @@ if(user.name == "Unix")
   main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
   main.data.dir = "/sci/labs/orzuk/orzuk/projects/SingleCell/"  # Change to directory with all the data
 }
-
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
 
@@ -61,6 +56,7 @@ gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')
 #basics.dir <- paste0(analysis.results.dir, 'BASiCS/')  # For BASiCS output 
 
 setwd(code.dir)
+source("scRNA_seq_utilities.R")
 
 set_data_dirs(data.type)  # set all directories for this data type
 

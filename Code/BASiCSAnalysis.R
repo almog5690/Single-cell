@@ -132,14 +132,14 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     return()
   }
   
-  print("Start BASICS CELL TYPE")
+  print("Start BASICS CELL TYPE Function")
   # Filter genes with less then 10 reads for either age group
   old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
   young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
   expressed_genes = which(old_sum > 10 & young_sum > 10)
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
-  print("GOT DVT")
+  print("GOT DVT FILE")
   
   if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
     print("Start BASICS CELL TYPE ANALYSIS")

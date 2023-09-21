@@ -1,5 +1,6 @@
 # Utilities needed for single cell analysis and visualization 
 library(readxl)
+library(GGally)
 
 
 # Set directories for raw and processed data, gene features data, analysis results, figures .. for a given data type 
@@ -147,6 +148,21 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     names(gv[[feature.name]]) <- gene.values$Group.1
   }  # end loop on different features   
   save(gv, file=gene.features.outfile)   # Save dataframe to file in R format for faster reading next time  
+  
+  # new: create also a unified data-frame with all gene names (many missing values: NA)
+  all.names <- c() # names(gv[[1]])
+  for(feature.name in feature.names)
+  {
+    all.names <- union(all.names, names(gv[[feature.name]]))
+  }
+  gv.df <- data.frame(matrix(NA, nrow = length(all.names), ncol = length(feature.names)))
+  names(gv.df) <- feature.names
+  rownames(gv.df) <- all.names
+  for(feature.name in feature.names)
+  {
+    gv.df[names(gv[[feature.name]]), feature.name] <- gv[[feature.name]]
+  }
+  
   return(gv)
 }
 
