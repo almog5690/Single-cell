@@ -42,5 +42,9 @@ if(run.celltype)
   old.ind = SC$Age == "Old"
   young.ind = SC$Age == "Young"
   batch = SC$orig.ident
+  
+  # Remove NA cells (should be done inside function?)
+#  na.inds = which(is.na(counts.mat), arr.ind=TRUE)
+#  na.cols = union(na.inds[,2])
   test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
 }

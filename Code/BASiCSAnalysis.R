@@ -124,6 +124,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 
 
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
+  cell_types[is.na(cell_types)] = ""  # get rid of NA cell types 
   # filtering the cell-types
   if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
@@ -134,8 +135,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
   
   print("Start BASICS CELL TYPE Function")
   # Filter genes with less then 10 reads for either age group
-  old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
-  young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
+  old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)], na.rm = TRUE) 
+  young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)], na.rm = TRUE)
   expressed_genes = which(old_sum > 10 & young_sum > 10)
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
