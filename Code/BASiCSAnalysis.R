@@ -133,48 +133,46 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     return()
   }
   
-  print("Start BASICS CELL TYPE Function")
   # Filter genes with less then 10 reads for either age group
   old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)], na.rm = TRUE) 
   young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)], na.rm = TRUE)
   expressed_genes = which(old_sum > 10 & young_sum > 10)
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
-  print("GOT DVT FILE")
-  
+
   if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
-    print("Start BASICS CELL TYPE ANALYSIS")
-    cc = counts.mat[expressed_genes,cell_types == ct_name & old.ind]
-    print("OK COUNTS, dim cc:")
-    print(dim(cc))
-    bb = batch[(cell_types == ct_name) & old.ind]
-    print("OK BATCH, len bb:")
-    print(length(bb))
-    print(dim(counts.mat))
-    print(length(expressed_genes))
-    print(length(ct_name))
-    print(length(old.ind))
+#    print("Start BASICS CELL TYPE ANALYSIS")
+#    cc = counts.mat[expressed_genes,cell_types == ct_name & old.ind]
+#    print("OK COUNTS, dim cc:")
+#    print(dim(cc))
+#    bb = batch[(cell_types == ct_name) & old.ind]
+#    print("OK BATCH, len bb:")
+#    print(length(bb))
+#    print(dim(counts.mat))
+#    print(length(expressed_genes))
+#    print(length(ct_name))
+#    print(length(old.ind))
     
-    print("Length expressed genes for cell type:")
-    print(length(expressed_genes))
-    print("Legth old, length young:")
-    print(c( sum(old_sum>10), sum(young_sum>10) ))
+#    print("Length expressed genes for cell type:")
+#    print(length(expressed_genes))
+#    print("Legth old, length young:")
+#    print(c( sum(old_sum>10), sum(young_sum>10) ))
     
     # BASiCS data for old and young mice  
     old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, (cell_types == ct_name) & old.ind],
                             BatchInfo = batch[(cell_types == ct_name) & old.ind]) 
-    print("Start YOUNG")
+#    print("Start YOUNG")
     young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, cell_types == ct_name & young.ind],
                               BatchInfo = batch[cell_types == ct_name & young.ind]) 
     
-    print(paste0("Chains directory: ",  DVT$basics.chains.dir))
+#    print(paste0("Chains directory: ",  DVT$basics.chains.dir))
     # Creating BASiCS chain for old and young mice
     chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                             WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
     chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                               WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
     
-    print(paste0("Start BASICS TEST: : "))
+#    print(paste0("Start BASICS TEST: : "))
     # Differential over-dispersion test - only on genes without significant difference in mean expression
     test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
                          GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
