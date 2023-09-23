@@ -48,3 +48,6 @@ if(run.celltype)
 #  na.cols = union(na.inds[,2])
   test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
 }
+
+
+
