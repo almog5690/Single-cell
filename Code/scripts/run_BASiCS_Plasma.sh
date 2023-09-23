@@ -1,3 +1,5 @@
+#!/bin/sh
+
 module load R4
 
 #SBATCH --ntasks=2
