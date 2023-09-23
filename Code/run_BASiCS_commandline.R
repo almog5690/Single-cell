@@ -7,7 +7,7 @@ data.type = args[1]
 organ = args[2]  
 ct_name = args[3] 
 
-print(paste0("Read Input for data=", data.type, " tissue=", organ, "cell-type=", ct_name))  
+print(paste0("Read Input for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
 
 # Set paths 
 user.name = "Unix" #  "Almog"  # Or # Unix 
@@ -27,6 +27,6 @@ old.ind = SC$Age == "Old"
 young.ind = SC$Age == "Young"
 batch = SC$orig.ident
 
-print(paste0("Running BASiCS for data=", data.type, " tissue=", organ, "cell-type=", ct_name))  
+print(paste0("Running BASiCS for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
 # Remove NA cells (should be done inside function?)
 test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)

@@ -49,5 +49,20 @@ if(run.celltype)
   test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
 }
 
-
+prepare.scripts = TRUE
+if(prepare.scripts)  # make command line scripts for running on unix cluster 
+{
+  ctr = 1
+  for( cur.ct in unique(SC$CT))
+  {
+    script.file.name = paste0("run_BASiCS_", cur.ct, ".sh") 
+    out.file.name = paste0("BASiCS_log_", cur.ct, ".out") 
+    # Create the script 
+    fileConn<-file(paste0('scripts/', script.file.name))
+    writeLines(c("module load R4", "", "#SBATCH --ntasks=2", "#SBATCH --mem=4G", "#!/usr/bin/env Rscript", "", paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
+    close(fileConn)
+    print(paste0("sbatch -o '", out.file.name, "' ", script.file.name)) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
+    ctr = ctr + 1
+  }
+}  
 
