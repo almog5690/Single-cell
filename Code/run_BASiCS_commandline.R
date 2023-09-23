@@ -1,6 +1,10 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data  
 # Main script for analysis of single-cell gene-expression data
 
+print("R Version:")
+print(version)
+print("Start script:")
+
 # Parameters ordered: data.type, organ, ct_name 
 args = commandArgs(trailingOnly=TRUE)  # Read from user 
 data.type = args[1] 
