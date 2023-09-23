@@ -59,7 +59,7 @@ if(prepare.scripts)  # make command line scripts for running on unix cluster
     out.file.name = paste0("BASiCS_log_", cur.ct, ".out") 
     # Create the script 
     fileConn<-file(paste0('scripts/', script.file.name))
-    writeLines(c("#!/bin/sh", "", "module load R4", "", "#SBATCH --ntasks=2", "#SBATCH --mem=4G", "#!/usr/bin/env Rscript", "", paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
+    writeLines(c("#!/bin/sh", "", "module load R4", "", "#SBATCH --ntasks=2", "#SBATCH --mem=16G", "#!/usr/bin/env Rscript", "", paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
     close(fileConn)
     ctr = ctr + 1
   }
