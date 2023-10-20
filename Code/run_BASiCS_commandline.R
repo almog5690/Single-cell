@@ -18,15 +18,17 @@ user.name = "Unix" #  "Almog"  # Or # Unix
 main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 setwd(code.dir)
+print(paste0("Current dir: ", getwd()))
 source('scRNA_seq_config.R')
-
+print("Loaded config file!")
 
 # Need to read the single cell data first 
-print("Loading data")  
+print(paste0("Loading data from: ", paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")))  
 SC = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object - heavy code 
+print("First parsing of data:")  
 cell_types = SC$CT
 unique_cell_types = unique(cell_types)
-counts.mat = as.matrix(SC@assays$RNA@counts)  # heavy code- convert to matrix
+counts.mat = as.matrix(SC@assays$RNA@counts)  # heavy code - convert to matrix
 old.ind = SC$Age == "Old"
 young.ind = SC$Age == "Young"
 batch = SC$orig.ident
