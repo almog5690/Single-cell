@@ -123,7 +123,10 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 
 
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
+  print("Starting cell type BASICS")
   cell_types[is.na(cell_types)] = ""  # get rid of NA cell types 
+  print("Filtering cell type BASICS")
+  
   # filtering the cell-types
   if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
