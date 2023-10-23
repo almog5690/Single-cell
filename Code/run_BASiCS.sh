@@ -16,15 +16,3 @@ module load R4
 --------------------------------------------
 
 Rscript --vanilla run_BASiCS_commandline.R Blood_SC Blood NK-FCER1G
-
-
-
-#!/bin/bash
-
-#SBATCH --time=24:00:00
-#SBATCH --ntasks=2
-#SBATCH --mem=24G
-
-#!/usr/bin/env Rscript
-
-Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ABC
