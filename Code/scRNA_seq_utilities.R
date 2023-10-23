@@ -7,7 +7,7 @@ library(dplyr)
 # Set directories for raw and processed data, gene features data, analysis results, figures .. for a given data type 
 set_data_dirs <- function(data.type)
 {
-  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.Droplet" ~ 2,
+  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
                          data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
   # Set globally: 
   data.dir <<- paste0(main.data.dir, 'Data/', data.dirs[dirs.index], '/')
@@ -468,7 +468,7 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 # Determine file name for BASiCS data files 
 get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
-  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.Droplet" ~ 2,
+  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
                           data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
   
   
