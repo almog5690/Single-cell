@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 sbatch -o 'BASiCS_log_Naive-B.out' run_BASiCS_Naive-B.sh
 sbatch -o 'BASiCS_log_CD4-Naive.out' run_BASiCS_CD4-Naive.sh
 sbatch -o 'BASiCS_log_NK-GZMH.out' run_BASiCS_NK-GZMH.sh
@@ -27,3 +28,34 @@ sbatch -o 'BASiCS_log_CD4-Naive-NECTIN1.out' run_BASiCS_CD4-Naive-NECTIN1.sh
 sbatch -o 'BASiCS_log_Naive-B-NRGN.out' run_BASiCS_Naive-B-NRGN.sh
 sbatch -o 'BASiCS_log_NK-SELL.out' run_BASiCS_NK-SELL.sh
 sbatch -o 'BASiCS_log_RBC.out' run_BASiCS_RBC.sh
+=======
+sbatch -o 'BASiCS_log_Naive-B.out' run_BASiCS_Naive-B.sh
+sbatch -o 'BASiCS_log_CD4-Naive.out' run_BASiCS_CD4-Naive.sh
+sbatch -o 'BASiCS_log_NK-GZMH.out' run_BASiCS_NK-GZMH.sh
+sbatch -o 'BASiCS_log_CD14-MC.out' run_BASiCS_CD14-MC.sh
+sbatch -o 'BASiCS_log_CD16-MC.out' run_BASiCS_CD16-MC.sh
+sbatch -o 'BASiCS_log_CD8-Naive.out' run_BASiCS_CD8-Naive.sh
+sbatch -o 'BASiCS_log_CD8-Tem.out' run_BASiCS_CD8-Tem.sh
+sbatch -o 'BASiCS_log_CD4-Tm.out' run_BASiCS_CD4-Tm.sh
+sbatch -o 'BASiCS_log_cDC.out' run_BASiCS_cDC.sh
+sbatch -o 'BASiCS_log_Megakaryocytes.out' run_BASiCS_Megakaryocytes.sh
+sbatch -o 'BASiCS_log_CD4-Tem.out' run_BASiCS_CD4-Tem.sh
+sbatch -o 'BASiCS_log_NK-S100A2.out' run_BASiCS_NK-S100A2.sh
+sbatch -o 'BASiCS_log_Intermed-MC.out' run_BASiCS_Intermed-MC.sh
+sbatch -o 'BASiCS_log_NA.out' run_BASiCS_NA.sh
+sbatch -o 'BASiCS_log_CD4-Treg.out' run_BASiCS_CD4-Treg.sh
+sbatch -o 'BASiCS_log_pDC.out' run_BASiCS_pDC.sh
+sbatch -o 'BASiCS_log_Memory-B-CRIP1.out' run_BASiCS_Memory-B-CRIP1.sh
+sbatch -o 'BASiCS_log_NK-FCER1G.out' run_BASiCS_NK-FCER1G.sh
+sbatch -o 'BASiCS_log_CD8-CTL.out' run_BASiCS_CD8-CTL.sh
+sbatch -o 'BASiCS_log_ABC.out' run_BASiCS_ABC.sh
+sbatch -o 'BASiCS_log_CD14-MC-PPBP.out' run_BASiCS_CD14-MC-PPBP.sh
+sbatch -o 'BASiCS_log_NK-GZMK.out' run_BASiCS_NK-GZMK.sh
+sbatch -o 'BASiCS_log_NK-IL7R.out' run_BASiCS_NK-IL7R.sh
+sbatch -o 'BASiCS_log_Memory-B-IL32.out' run_BASiCS_Memory-B-IL32.sh
+sbatch -o 'BASiCS_log_Plasma.out' run_BASiCS_Plasma.sh
+sbatch -o 'BASiCS_log_CD4-Naive-NECTIN1.out' run_BASiCS_CD4-Naive-NECTIN1.sh
+sbatch -o 'BASiCS_log_Naive-B-NRGN.out' run_BASiCS_Naive-B-NRGN.sh
+sbatch -o 'BASiCS_log_NK-SELL.out' run_BASiCS_NK-SELL.sh
+sbatch -o 'BASiCS_log_RBC.out' run_BASiCS_RBC.sh
+>>>>>>> Stashed changes
