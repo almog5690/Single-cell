@@ -1,13 +1,16 @@
 # Utilities needed for single cell analysis and visualization 
 library(readxl)
 library(GGally)
+library(dplyr)
 
 
 # Set directories for raw and processed data, gene features data, analysis results, figures .. for a given data type 
 set_data_dirs <- function(data.type)
 {
+  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.Droplet" ~ 2,
+                         data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
   # Set globally: 
-  data.dir <<- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
+  data.dir <<- paste0(main.data.dir, 'Data/', data.dirs[dirs.index], '/')
   raw.data.dir <<- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
   processed.data.dir <<- paste0(data.dir, 'Processed/')  # For processed scRNA-seq gene expression files (one per tissue), 
   # after running scRNA_seq_preprocess.R. Format: *.rds files. 
@@ -465,7 +468,10 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 # Determine file name for BASiCS data files 
 get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
-
+  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.Droplet" ~ 2,
+                          data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
+  
+  
   if(data.type %in% c("TM.facs", "TM.droplet"))  # special case 
   {
     basics.dir <- paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/')  # This is already in the config !! 
@@ -477,11 +483,10 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
       DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
   } else
   {
-    basics.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/BASiCS/')
+    basics.dir <- paste0(main.data.dir, 'Data/', data.dirs[dirs.index], '/BASiCS/')
     basics.chains.dir =  paste0(basics.dir, 'chains/')
     basics.DVT.dir =  paste0(basics.dir, 'DVT/')
     DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
-    
   }  
   
   # BASiCS directory and file names
