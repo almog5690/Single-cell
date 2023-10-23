@@ -477,10 +477,11 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
       DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
   } else
   {
-    basics.dir <- paste0(main.data.dir, 'Data/', data.type, 'BASiCS/')
+    basics.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/BASiCS/')
     basics.chains.dir =  paste0(basics.dir, 'chains/')
     basics.DVT.dir =  paste0(basics.dir, 'DVT/')
     DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
+    
   }  
   
   # BASiCS directory and file names
