@@ -121,23 +121,6 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 }  
 
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-### For the Humen-Blood:
-data.type = "Blood_SC"
-organ = "Blood"
-cell_types = SC$CT
-ct_name = "ABC" ## cell type example
-counts.mat = as.matrix(SC@assays$RNA@counts)
-old.ind = SC$Age == "Old"
-young.ind = SC$Age == "Young"
-batch = SC$orig.ident
-
-test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
-=======
->>>>>>> dc0fb81652cacc03f5573094b0ca4cb0062f8cf8
->>>>>>> Stashed changes
 
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
   print("Starting cell type BASICS")
