@@ -1,21 +1,10 @@
-<<<<<<< Updated upstream
 #!/bin/sh
 
+#SBATCH --time=168:00:00
+#SBATCH --ntasks=4
+#SBATCH --mem=48G
 module load R4
-
-#SBATCH --ntasks=2
-#SBATCH --mem=16G
 #!/usr/bin/env Rscript
 
-Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood CD4-Treg
-=======
-#!/bin/sh
-
 module load R4
-
-#SBATCH --ntasks=2
-#SBATCH --mem=16G
-#!/usr/bin/env Rscript
-
 Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood CD4-Treg
->>>>>>> Stashed changes
