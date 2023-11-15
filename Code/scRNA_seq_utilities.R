@@ -146,6 +146,19 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
       
     }
     
+    # Features from the impc database
+    if(feature.name %in% c("achilles", "impc", "haploinsufficiency"))
+    {
+        impc.data <-  read.delim(paste0(gene.data.dir, "impc_essential_genes_full_dataset.csv"))
+        impc.data <- read.csv(paste0(gene.data.dir, "impc_essential_genes_full_dataset.csv"), header=TRUE, sep = ',')
+        if(feature.name == "achilles")# TATA BOX
+          gene.values <- impc.data$achilles_mean_gene_effect
+        if(organism == "mice")
+          names(gene.values) <- toupper(impc.data$mouse_symbol)  # take mouse gene names (not human)   
+        else  # human
+          names(gene.values) <- toupper(impc.data$human_symbol)  # take mouse gene names (not human)   
+    }
+    
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1
