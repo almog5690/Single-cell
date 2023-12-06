@@ -50,7 +50,7 @@ if(run.celltype)
 }
 
 prepare.scripts = TRUE
-if(prepare.scripts)  # make command line scripts for running on unix cluster 
+if(prepare.scripts)  # Make command line scripts for running on unix cluster 
 {
   ctr = 1
   for( cur.ct in unique(SC$CT))
@@ -58,8 +58,16 @@ if(prepare.scripts)  # make command line scripts for running on unix cluster
     script.file.name = paste0("run_BASiCS_", cur.ct, ".sh") 
     out.file.name = paste0("BASiCS_log_", cur.ct, ".out") 
     # Create the script 
-    fileConn<-file(paste0('scripts/', script.file.name))
-    writeLines(c("#!/bin/sh", "", "module load R4", "", "#SBATCH --ntasks=2", "#SBATCH --mem=16G", "#!/usr/bin/env Rscript", "", paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
+    fileConn<-file(paste0('scripts/', script.file.name))  # "module load R4", not in script (should be loaded before!)
+    # Set job running environment parameters
+    writeLines(c("#!/bin/sh", "",  
+                 "#SBATCH --time=168:00:00", 
+                 "#SBATCH --ntasks=4", 
+                 "#SBATCH --mem=48G", 
+                 "module load R4", 
+                 "#!/usr/bin/env Rscript", "", 
+                 "module load R4",
+                 paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
     close(fileConn)
     ctr = ctr + 1
   }

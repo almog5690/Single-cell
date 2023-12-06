@@ -1,21 +1,25 @@
 <<<<<<< Updated upstream
-#!/bin/sh
+#!/bin/bash
 
+#SBATCH --time=168:00:00
+#SBATCH --ntasks=4
+#SBATCH --mem=48G
 module load R4
 
-#SBATCH --ntasks=2
-#SBATCH --mem=16G
 #!/usr/bin/env Rscript
-
-Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood CD16-MC
 =======
 #!/bin/sh
+>>>>>>> Stashed changes
 
+#SBATCH --time=168:00:00
+#SBATCH --ntasks=4
+#SBATCH --mem=48G
 module load R4
+<<<<<<< Updated upstream
 
-#SBATCH --ntasks=2
-#SBATCH --mem=16G
+=======
 #!/usr/bin/env Rscript
 
-Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood CD16-MC
+module load R4
 >>>>>>> Stashed changes
+Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood CD16-MC
