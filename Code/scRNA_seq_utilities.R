@@ -149,10 +149,24 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     # Features from the impc database
     if(feature.name %in% c("achilles", "impc", "haploinsufficiency"))
     {
-        impc.data <-  read.delim(paste0(gene.data.dir, "impc_essential_genes_full_dataset.csv"))
+#        impc.data <-  read.delim(paste0(gene.data.dir, "impc_essential_genes_full_dataset.csv"))
         impc.data <- read.csv(paste0(gene.data.dir, "impc_essential_genes_full_dataset.csv"), header=TRUE, sep = ',')
-        if(feature.name == "achilles")# TATA BOX
+        if(feature.name == "achilles") # TATA BOX
           gene.values <- impc.data$achilles_mean_gene_effect
+        if(feature.name == "impc") # Here use 
+        {
+          gene.values.str <- impc.data$impc_via_category
+          # Now parse: vital vs. non-vital
+          viability.str <-  c("Homozygous-Viable","Homozygous-Lethal", "Homozygous-Subviable", 
+                              "Homozygous-Subviable,Homozygous-Lethal",  "Hemizygous-Viable",                      
+                              "Homozygous-Subviable,Homozygous-Viable", "Hemizygous-Lethal")
+          viability.val <- c(1, 0, 0.5, 0.25, 0.75, 0.75, 0.25)
+          mapping_table <- data.frame(strings = viability.str, values = viability.val)
+          values_table <- setNames(mapping_table[,2], mapping_table[,1])
+          
+#          gene.values <- rep(0, length(gene.values.str))
+          gene.values <- sapply(gene.values.str, function(x) ifelse(x %in% names(values_table), values_table[x], NA))
+        }
         if(organism == "mice")
           names(gene.values) <- toupper(impc.data$mouse_symbol)  # take mouse gene names (not human)   
         else  # human
