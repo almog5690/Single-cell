@@ -172,7 +172,6 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
         else  # human
           names(gene.values) <- toupper(impc.data$human_symbol)  # take mouse gene names (not human)   
     }
-    
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x
     names(gv[[feature.name]]) <- gene.values$Group.1
