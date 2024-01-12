@@ -5,10 +5,12 @@ library(rhdf5)
 # setwd(main.dir)
 
 
+# Read meta data for each data type
 get_meta_data <- function(data.type, force.rerun = FALSE)
 {
   meta.data.file <- paste0(processed.data.dir, 'meta.data.', processed.files.str[data.type], '.RData')
   if(file.exists(meta.data.file) & (force.rerun == FALSE)) {
+    print("Exists!")
        load(meta.data.file)
        return(meta.data)
   }
@@ -16,20 +18,21 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
   if(data.type == "TM.droplet")
   {
     meta.data = list() # getting organs metadata 
-    for(i in 1:length(droplet.files)){
+    for(i in 1:length(raw.files)){
       print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad",sep = "_")))
-      meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
+      meta = h5read(paste0("raw files/", raw.files[i]),"uns")
+#      meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
       meta = meta[grep("categories",names(meta))]
       names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
       meta.data[[i]] = meta
     }
   }
-  if(data.type == "TM.facs") # Fill in .. 
+  if(data.type == "TM.facs") # organs meta data 
   {
     # getting organs metadata 
     meta.data = list() 
-    for(i in 1:length(facs.files)){
-      meta = h5read(facs.files[i],"uns")
+    for(i in 1:length(raw.files)){
+      meta = h5read(raw.files[i], "uns")
       meta = meta[grep("categories",names(meta))]
       names(meta) = sapply(names(meta),function(name) substr(name,1,nchar(name) - 11))
       meta.data[[i]] = meta
@@ -43,6 +46,11 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
                   "NK-GZMH", "NK-GZMK", "NK-IL7R", "NK-S100A2", "NK-SELL",          
                   "pDC", "Plasma", "RBC")))
   }
+  
+  if(data.type == "CR.Rat"){ # Rats: 
+     
+  }
+  
   save(meta.data, file = meta.data.file)  
   return(meta.data)
 }

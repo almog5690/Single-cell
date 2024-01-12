@@ -14,10 +14,10 @@ if(!exists('data.type'))  # set default values
   data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
 
 # Data types
-data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC") 
-data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno", "HumanBlood")   # Names of directories 
+data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC", "MCA") 
+data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno", "HumanBlood", "MCA")   # Names of directories 
 names(data.dirs) = data.types 
-processed.files.str <- c("facs", "drop", "rat", "anno", "SC") # match these (then rds)
+processed.files.str <- c("facs", "drop", "rat", "anno", "SC", "MCA") # match these (then rds)
 names(processed.files.str) = data.types
 
 

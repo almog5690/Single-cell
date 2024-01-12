@@ -1,10 +1,13 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data  
 # Main script for analysis of single-cell gene-expression data
-data.type = "TM.facs"  # Blood_SC
-organ = "Aorta" # Blood (?) # smallest facs file, should be fastest 
-ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
-data.type = "Blood_SC"
-organ = "Blood"
+data.type = "MCA" # "TM.facs"  # Blood_SC
+organ = "Liver" # skin has a small file "Aorta" # Blood (?) # smallest facs file, should be fastest 
+ct_name = "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
+# data.type = "Blood_SC"
+# organ = "Blood"
+# ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
+
+
 
 run.tissue = FALSE
 run.celltype = !(run.tissue)
@@ -60,13 +63,13 @@ if(prepare.scripts)  # Make command line scripts for running on unix cluster
     # Create the script 
     fileConn<-file(paste0('scripts/', script.file.name))  # "module load R4", not in script (should be loaded before!)
     # Set job running environment parameters
-    writeLines(c("#!/bin/sh", "",  
+    writeLines(c("#!/bin/bash", "",  
                  "#SBATCH --time=168:00:00", 
                  "#SBATCH --ntasks=4", 
                  "#SBATCH --mem=48G", 
-                 "module load R4", 
+                 "module load R4", "", 
                  "#!/usr/bin/env Rscript", "", 
-                 "module load R4",
+                 "module load R4", "", 
                  paste0("Rscript --vanilla ../run_BASiCS_commandline.R Blood_SC Blood ", cur.ct)), fileConn)
     close(fileConn)
     ctr = ctr + 1

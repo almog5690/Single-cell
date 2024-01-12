@@ -7,8 +7,10 @@ library(dplyr)
 # Set directories for raw and processed data, gene features data, analysis results, figures .. for a given data type 
 set_data_dirs <- function(data.type)
 {
-  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
-                         data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
+  dirs.index <- which(data.types == data.type)
+#  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
+#                         data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, 
+#                         data.type == "Blood_SC" ~ 5, data.type == "MCA" ~ 6)
   # Set globally: 
   data.dir <<- paste0(main.data.dir, 'Data/', data.dirs[dirs.index], '/')
   raw.data.dir <<- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
@@ -376,6 +378,9 @@ get_density <- function(x, y, ...) { # function for figures 4 and 5
 # Divide to old and young in each dataset
 dataset_to_age_groups <- function(data.type) { # set specific ages for all age groups in all datasets
   old_ages_2 = c()
+  young_str = "young"
+  old_str = "old"
+  
   if(data.type == "TM.droplet")
   {
     young_ages = "3m" # The ages of the young mice 
@@ -390,8 +395,6 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
     young_ages = "3m" # The ages of the young mice 
     old_ages_1 = c("18m", "21m", "24m")
     test_str = "same-mean"
-    young_str = "young"
-    old_str = "old"
   }
   if(data.type == "CR.Rat")   
     
@@ -399,15 +402,17 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
     young_ages = "Y" # The ages of the young mice 
     old_ages_1 = "O"
     test_str = "rats"
-    young_str = "young"
-    old_str = "old"
   }
   if(data.type == "Blood_SC"){
     young_ages = "Young" # The ages of the young mice 
     old_ages_1 = "Old"
     test_str = "BloodHuman"
-    young_str = "young"
-    old_str = "old"
+  }
+  
+  if(data.type == "MCA"){  # Need to fill! 
+    young_ages = "Young"
+    old_ages_1 = "Old"
+    test_str = "MCA"
   }
   
   return(list(young_ages = young_ages, old_ages_1 = old_ages_1, old_ages_2 = old_ages_2, 
@@ -435,7 +440,7 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
       old.ind = c(meta.data$Age %in% age.groups$old_ages_2)
     }
     n_cell <- length(meta.data$age)
-  } else
+  } else  # All other datasets 
   {
     young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses
@@ -480,8 +485,10 @@ dataset_to_BASiCS_file_names <- function(data.type, tissue, cell.type)
 # Determine file name for BASiCS data files 
 get_DVT_file_name <- function(data.type, tissue, cell_type)
 {
-  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
-                          data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, data.type == "Blood_SC" ~ 5)
+  dirs.index <- which(data.types == data.type)
+#  dirs.index <- case_when(data.type == "TM.facs" ~ 1,data.type == "TM.droplet" ~ 2,
+#                          data.type == "CR.Rat" ~ 3,data.type == "Age.Anno" ~ 4, 
+#                          data.type == "Blood_SC" ~ 5, data.type == "MCA" ~ 6)
   
   
   if(data.type %in% c("TM.facs", "TM.droplet"))  # special case 
@@ -493,7 +500,7 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
       DVT.file.name = paste0(basics.DVT.dir, paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
     else
       DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
-  } else
+  } else  # all other datasets 
   {
     basics.dir <- paste0(main.data.dir, 'Data/', data.dirs[dirs.index], '/BASiCS/')
     basics.chains.dir =  paste0(basics.dir, 'chains/')
@@ -501,33 +508,7 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
     DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
   }  
   
-  # BASiCS directory and file names
-#  if(data.type == "CR.Rat"){
-#    basics.chains.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/chains/')
-#    basics.DVT.dir =  paste0(main.data.dir, 'Data/RatCR/BASiCS/DVT/')
-#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
-#  }
-#  if(data.type == "Age.Anno"){ # New human data 
-#    basics.chains.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/chains/')
-#    basics.DVT.dir =  paste0(main.data.dir, 'Data/HumanAgeAnno/BASiCS/DVT/')
-#    DVT.file.name = paste0(basics.DVT.dir, paste("DVT", tissue,cell_type, "same-mean.RData"))
-#  }
-#  if(data.type == "TM.droplet"){
-#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.droplet/')
-#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.droplet/')
-#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT test",tissue,cell_type,"3-24m drop.RData"))
-#  }
-#  if(data.type == "TM.facs"){
-#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
-#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
-#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
-#  }
-#  if(data.type == "blood_SC"){
-#    basics.chains.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/chains/TM.facs/')
-#    basics.DVT.dir =  paste0(main.data.dir, 'Data/TabulaMuris/BASiCS/DVT/TM.facs/')
-#    DVT.file.name = paste0(basics.DVT.dir,paste("DVT",tissue,cell_type,"same-mean.RData"))
-#  }
-  
+
   return(list(DVT.file.name=DVT.file.name, basics.chains.dir = basics.chains.dir, basics.DVT.dir = basics.DVT.dir))
 }
 
