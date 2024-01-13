@@ -46,16 +46,16 @@ if(run.celltype)
   young.ind = SC$Age == "Young"
   
   if(data.type == "MCA"){  # extract for each cell the individual identity 
-      batch = names(SC$orig.ident) # Get cells IDs
-      for(i in 1:length(SC$orig.ident))
-        batch[i] = str_split(batch[i], "\\.")[[1]][1]
+    batch = names(SC$orig.ident) # Get cells IDs
+    for(i in 1:length(SC$orig.ident))
+      batch[i] = str_split(batch[i], "\\.")[[1]][1]
   } else
     batch = SC$orig.ident
   
   
   # Remove NA cells (should be done inside function?)
-#  na.inds = which(is.na(counts.mat), arr.ind=TRUE)
-#  na.cols = union(na.inds[,2])
+  #  na.inds = which(is.na(counts.mat), arr.ind=TRUE)
+  #  na.cols = union(na.inds[,2])
   test_file = Cell_type_BASiCS(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch)
 }
 
@@ -68,16 +68,21 @@ if(prepare.scripts)  # Make command line scripts for running on unix cluster
   for(tissue.ctr in 1:length(processed.files))
     organs[tissue.ctr] = str_split(tail(str_split(processed.files[tissue.ctr], "/")[[1]], n=1), "\\.")[[1]][1]
   
+  if(!run.celltype)
+    sink(paste0("scripts/", data.type, "/run_BASiCS_all_tissues_types_", data.type, ".sh"))
+  else    
+    sink(paste0("scripts/", data.type, "/run_BASiCS_all_cell_types_", data.type, ".sh"))
+  
   for(tissue.ctr in 1:length(processed.files))
   {
     organ = organs[tissue.ctr]
     print(paste0("Write scripts organ: ", organ))
-    SC = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object - heavy code 
-    ctr = 1
-    for( cur.ct in unique(SC$CT))
+    
+    if(!run.celltype)  # Prepare script per tissue: 
     {
-      script.file.name = paste0("run_BASiCS_", organ, '_', cur.ct, ".sh") 
-      out.file.name = paste0("BASiCS_log_", organ, '_', cur.ct, ".out") 
+      script.file.name = paste0("run_BASiCS_", organ, ".sh") 
+      out.file.name = paste0("BASiCS_log_", organ, ".out") 
+      cat(paste0("sbatch -o '", out.file.name, "' ", script.file.name, "\n")) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
       # Create the script 
       fileConn<-file(paste0('scripts/', data.type, "/", script.file.name))  # "module load R4", not in script (should be loaded before!)
       # Set job running environment parameters
@@ -88,18 +93,53 @@ if(prepare.scripts)  # Make command line scripts for running on unix cluster
                    "module load R4", "", 
                    "#!/usr/bin/env Rscript", "", 
                    "module load R4", "", 
-                   paste0("Rscript --vanilla ../run_BASiCS_commandline.R ", data.type, " ", organ, " ", cur.ct)), fileConn)
+                   paste0("Rscript --vanilla ../run_BASiCS_commandline.R ", data.type, " ", organ)), fileConn)
       close(fileConn)
       ctr = ctr + 1
-    }  # end loop on cell types
+    }  else  # : one script per cell type
+    {
+      SC = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object - heavy code 
+      ctr = 1
+      for( cur.ct in unique(SC$CT))
+      {
+        script.file.name = paste0("run_BASiCS_", organ, '_', cur.ct, ".sh") 
+        out.file.name = paste0("BASiCS_log_", organ, '_', cur.ct, ".out") 
+        cat(paste0("sbatch -o '", out.file.name, "' ", script.file.name, "\n")) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
+        # Create the script 
+        fileConn<-file(paste0('scripts/', data.type, "/", script.file.name))  # "module load R4", not in script (should be loaded before!)
+        # Set job running environment parameters
+        writeLines(c("#!/bin/bash", "",  
+                     "#SBATCH --time=168:00:00", 
+                     "#SBATCH --ntasks=4", 
+                     "#SBATCH --mem=48G", 
+                     "module load R4", "", 
+                     "#!/usr/bin/env Rscript", "", 
+                     "module load R4", "", 
+                     paste0("Rscript --vanilla ../run_BASiCS_commandline.R ", data.type, " ", organ, " ", cur.ct)), fileConn)
+        close(fileConn)
+        ctr = ctr + 1
+      }  # end loop on cell types
+    } # end else
   }  # end loop on tissues
-  sink(paste0("scripts/", data.type, "/run_BASiCS_all_cell_types_human_blood.sh"))
-  for( cur.ct in unique(SC$CT))
-  {
-    script.file.name = paste0("run_BASiCS_", organ, '_', cur.ct, ".sh") 
-    out.file.name = paste0("BASiCS_log_", organ, '_', cur.ct, ".out") 
-    cat(paste0("sbatch -o '", out.file.name, "' ", script.file.name, "\n")) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
-  }
+  #  if(!run.celltype)
+  #  {
+  #    sink(paste0("scripts/", data.type, "/run_BASiCS_all_tissues_types_", data.type, ".sh"))
+  #    for( organ in organs)
+  #    {
+  #      script.file.name = paste0("run_BASiCS_", organ, ".sh") 
+  #      out.file.name = paste0("BASiCS_log_", organ,".out") 
+  #      cat(paste0("sbatch -o '", out.file.name, "' ", script.file.name, "\n")) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
+  #    }
+  #  } else
+  #  {
+  #    sink(paste0("scripts/", data.type, "/run_BASiCS_all_cell_types_", data.type, ".sh"))
+  #    for( cur.ct in unique(SC$CT))
+  #    {
+  #      script.file.name = paste0("run_BASiCS_", organ, '_', cur.ct, ".sh") 
+  #      out.file.name = paste0("BASiCS_log_", organ, '_', cur.ct, ".out") 
+  #      cat(paste0("sbatch -o '", out.file.name, "' ", script.file.name, "\n")) # basics_log_", cur.ct, "' run_BASiCS_", ctr, ".sh"))
+  #    }
+  #  }
   sink()  
 }  
 
