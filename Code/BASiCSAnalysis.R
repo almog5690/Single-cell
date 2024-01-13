@@ -173,6 +173,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
                               BatchInfo = batch[cell_types == ct_name & young.ind]) 
     
     print(paste0("Chains directory: ",  DVT$basics.chains.dir))
+    if(!dir.exists(DVT$basics.chains.dir))
+      dir.create(DVT$basics.chains.dir, recursive = TRUE)
     # Creating BASiCS chain for old and young mice
     chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                             WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
@@ -185,7 +187,6 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
                          GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
                          EpsilonM = 0, EpsilonD = log2(1.5),
                          EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
-    
     print("Save and return:")
     save(test,file = DVT$DVT.file.name) 
     return(test)

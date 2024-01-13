@@ -24,6 +24,7 @@ set_data_dirs <- function(data.type)
   # Return all in a list? or just keep them as updated global variables  
 }
 
+
 # Get tissues. Use the processed files if they exist (otherwise need to go back to raw files?)
 get_tissue_file_names <- function(data.type)
 {
@@ -48,7 +49,7 @@ get_tissue_file_names <- function(data.type)
   if(data.type == "CR.Rat")  # to fill 
   {
     organs = c("Aorta","BAT","BM","Brain","Muscle","Skin","WAT","Kidney","Liver")
-    file.names = paste(organs,"rds", sep = ".")
+    file.names = paste(organs, "rds", sep = ".")
   }
   if(data.type == "Blood_SC"){
     organs = "Blood"
@@ -97,7 +98,6 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     load(gene.features.outfile)
     return(gv)
   }
-  
   n.features <- length(feature.names)
   gv <- vector("list", n.features)
   names(gv) <- feature.names
@@ -171,7 +171,7 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
         if(organism == "mice")
           names(gene.values) <- toupper(impc.data$mouse_symbol)  # take mouse gene names (not human)   
         else  # human
-          names(gene.values) <- toupper(impc.data$human_symbol)  # take mouse gene names (not human)   
+          names(gene.values) <- toupper(impc.data$human_symbol)  # take human gene names (not mouse)   
     }
     gene.values = aggregate(x = gene.values, by = list(names(gene.values)), FUN = mean)  # perform unique
     gv[[feature.name]] <- gene.values$x

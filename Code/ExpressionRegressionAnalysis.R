@@ -138,7 +138,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
             cor.test(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)], 
                      cur_gene_features[[feature.type]][I_names], 
                      use = "complete.obs", method = "spearman")[3:4]  # Compute correlation and pvalues, ignore NaNs
-          print("Finished cor test!")
+#          print("Finished cor test!")
         }
         
         # 2. Fold-change       
@@ -285,10 +285,10 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       reg.ctr = reg.ctr + 1
       
       cell.type.ctr = cell.type.ctr+1  # update counter
-      print("Finished counter reg fc")
+#      print("Finished counter reg fc")
     }  # end loop on cell-types in tissue
   }  # end loop on tissues
-  print("Save ")
+#  print("Save ")
   
   save(DF_cor, file=reg.analysis.outfile)   # Save dataframe to file ( Save also to excel? ) 
   return(DF_cor)
