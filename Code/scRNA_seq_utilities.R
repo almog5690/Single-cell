@@ -58,7 +58,6 @@ get_tissue_file_names <- function(data.type)
   return(list(file.names = file.names, organs = organs))
 }
 
-
 # Filter cells from an expression matrix (not used yet. Should be part of analysis)
 filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 {
