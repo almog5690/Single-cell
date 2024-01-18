@@ -1,6 +1,7 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data, or MCA  
 # Main script for analysis of single-cell gene-expression data
 
+source("BASiCSAnalysis.R")
 print("R Version:")
 print(version)
 print("Start script:")
@@ -18,7 +19,7 @@ if(length(args)<3)  # only tissues
 {
   ct_name = args[3] 
   
-  print(paste0("Read BASiCS  Input for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
+  print(paste0("Read BASiCS Input for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
   
   # Set paths 
   user.name = "Unix" #  "Almog"  # Or # Unix 
