@@ -1,10 +1,20 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data, or MCA  
 # Main script for analysis of single-cell gene-expression data
 
-source("BASiCSAnalysis.R")
 print("R Version:")
 print(version)
 print("Start script:")
+
+# Set paths 
+user.name = "Unix" #  "Almog"  # Or # Unix 
+main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+code.dir <- paste0(main.dir, 'Code/')  # src files 
+setwd(code.dir)
+print(paste0("Current dir: ", getwd()))
+source('scRNA_seq_config.R')
+source("BASiCSAnalysis.R")
+print("Loaded config file!")
+
 
 # Parameters ordered: data.type, organ, ct_name 
 args = commandArgs(trailingOnly=TRUE)  # Read from user 
@@ -21,14 +31,6 @@ if(length(args)<3)  # only tissues
   
   print(paste0("Read BASiCS Input for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
   
-  # Set paths 
-  user.name = "Unix" #  "Almog"  # Or # Unix 
-  main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  code.dir <- paste0(main.dir, 'Code/')  # src files 
-  setwd(code.dir)
-  print(paste0("Current dir: ", getwd()))
-  source('scRNA_seq_config.R')
-  print("Loaded config file!")
   
   # Need to read the single cell data first 
   print(paste0("Loading data from: ", paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")))  
