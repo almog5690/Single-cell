@@ -9,7 +9,7 @@ ct_name = "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - ch
 
 
 
-run.tissue = FALSE
+run.tissue = TRUE
 run.celltype = !(run.tissue)
 
 
@@ -93,9 +93,9 @@ if(prepare.scripts)  # Make command line scripts for running on unix cluster
                    "module load R4", "", 
                    "#!/usr/bin/env Rscript", "", 
                    "module load R4", "", 
-                   paste0("Rscript --vanilla ../run_BASiCS_commandline.R ", data.type, " ", organ)), fileConn)
+                   paste0("Rscript --vanilla ../../run_BASiCS_commandline.R ", data.type, " ", organ)), fileConn)
       close(fileConn)
-      ctr = ctr + 1
+#      ctr = ctr + 1
     }  else  # : one script per cell type
     {
       SC = readRDS(file = paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")) # Current tissue Seurat object - heavy code 

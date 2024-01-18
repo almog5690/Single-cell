@@ -9,4 +9,4 @@ module load R4
 
 module load R4
 
-Rscript --vanilla ../run_BASiCS_commandline.R MCA Skin
+Rscript --vanilla ../../run_BASiCS_commandline.R MCA Skin
