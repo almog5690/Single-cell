@@ -28,6 +28,7 @@ set_data_dirs <- function(data.type)
 # Get tissues. Use the processed files if they exist (otherwise need to go back to raw files?)
 get_tissue_file_names <- function(data.type)
 {
+  set_data_dirs(data.type)
   # loading the meta data names for the droplet technology
   if(data.type == "TM.droplet")
   {
@@ -54,6 +55,16 @@ get_tissue_file_names <- function(data.type)
   if(data.type == "Blood_SC"){
     organs = "Blood"
     file.names = "Blood.SC.rds"
+  }
+  if(data.type == "MCA"){
+    file.patt <- "MCA"
+    load(paste0(processed.data.dir, "/meta.data.MCA.RData"))
+    file.names = list.files(path = processed.data.dir, pattern = "*facs.rds") # facs processed files list
+    organs = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1]))
+    
+    # List of organs with OLD and YOUNG: 
+    organs_old_young = c("Bladder", "Brain", "Heart", "Intestine", "Kidney", "Liver", "Lung", "Pancreas", 
+          "Prostate", "Spleen", "Stomach", "Testis", "Uterus")
   }
   return(list(file.names = file.names, organs = organs))
 }

@@ -8,6 +8,7 @@ library(rhdf5)
 # Read meta data for each data type
 get_meta_data <- function(data.type, force.rerun = FALSE)
 {
+  set_data_dirs(data.type)
   meta.data.file <- paste0(processed.data.dir, 'meta.data.', processed.files.str[data.type], '.RData')
   if(file.exists(meta.data.file) & (force.rerun == FALSE)) {
     print("Exists!")
@@ -19,7 +20,7 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
   {
     meta.data = list() # getting organs metadata 
     for(i in 1:length(raw.files)){
-      print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad",sep = "_")))
+      print(c("Opening file:", paste(drop_organs[i],"droplet.h5ad", sep = "_")))
       meta = h5read(paste0("raw files/", raw.files[i]),"uns")
 #      meta = h5read(paste0("raw files/",droplet.files[i]),"uns")
       meta = meta[grep("categories",names(meta))]
@@ -47,8 +48,12 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
                   "pDC", "Plasma", "RBC")))
   }
   
-  if(data.type == "CR.Rat"){ # Rats: 
+  if(data.type == "CR.Rat"){ # Rats: (meta data file ready)
      
+  }
+  if(data.type == "MCA")  # mice new data 
+  {
+    
   }
   
   save(meta.data, file = meta.data.file)  
@@ -61,13 +66,13 @@ preprocess <- function(data.type){
   set_data_dirs(data.type)
   
   if(data.type == "TM.droplet"){
-    raw.files = list.files(path = raw.data.dir, pattern = "drop.r",full.names = T)
+    raw.files = list.files(path = raw.data.dir, pattern = "drop.r", full.names = T)
     raw.files = raw.files[-c(6,21,2,15,16)]  # Removing Large intestine, Fat, Skin, Pancreas and Trachea because they have only one age group.
     organs = sapply(raw.files,function(f) unlist(strsplit(f,"[.]"))[1]) # List of droplet organs
     organs = unname(organs)
   }
   if(data.type == "TM.facs"){
-    raw.files = list.files(path = raw.data.dir, pattern = "facs",full.names = T) # facs raw files list
+    raw.files = list.files(path = raw.data.dir, pattern = "facs", full.names = T) # facs raw files list
     
     organs  = sapply(raw.files,function(f) strsplit(f,split ="-|[.]")[[1]][[8]]) # List of facs organs
     organs = unname(organs)
