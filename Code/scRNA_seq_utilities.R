@@ -58,8 +58,8 @@ get_tissue_file_names <- function(data.type)
   }
   if(data.type == "MCA"){
     file.patt <- "MCA"
-    load(paste0(processed.data.dir, "/meta.data.MCA.RData"))
-    file.names = list.files(path = processed.data.dir, pattern = "*facs.rds") # facs processed files list
+#    load(paste0(processed.data.dir, "/meta.data.MCA.RData"))
+    file.names = list.files(path = processed.data.dir, pattern = "*MCA.rds") # facs processed files list
     organs = unname(sapply(file.names,function(f) unlist(strsplit(f,"[.]"))[1]))
     
     # List of organs with OLD and YOUNG: 
