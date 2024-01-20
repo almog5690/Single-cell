@@ -6,6 +6,9 @@ ct_name = "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - ch
 # data.type = "Blood_SC"
 # organ = "Blood"
 # ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
+# data.type = "CR.Rat"
+# organ = "Aorta"
+# ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
 
 
 

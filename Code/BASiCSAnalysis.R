@@ -25,7 +25,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   # Dataset-specific part:   
   if(data.type == "CR.Rat"){ # Convert to dummy variables 
     cell_types = as.numeric(SC@meta.data$cell_types) # Cell types vector
-    n_cell_types = max(SC@meta.data$cell.ontology.class) # number of cell types
+    n_cell_types = max(as.numeric(SC@meta.data$cell_types)) # number of cell types. NOT WORKING for Rat
     cell_types_categories = levels(SC$cell_types)
   } 
   if(data.type %in% c("TM.facs", "TM.droplet")) # Tabula Muris
@@ -38,6 +38,12 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     cell_types = (SC$CT)
     n_cell_types = length(table(cell_types))
     cell_types_categories = names(table(SC$CT))
+  }
+  if(data.type == "MCA"){ # MCA mice
+    cell_types = (SC$CT) # Cell types vector
+    n_cell_types = length(table(cell_types)) # number of cell types
+    cell_types_categories = names(table(SC$CT))
+    
   }
   
   earase = vector()

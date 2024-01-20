@@ -53,7 +53,7 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
   }
   if(data.type == "MCA")  # mice new data 
   {
-    
+    meta.data = list() # getting organs metadata 
   }
   
   save(meta.data, file = meta.data.file)  
