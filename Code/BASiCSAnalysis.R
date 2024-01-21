@@ -79,7 +79,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     
     print("Length expressed genes for tissue:")
     print(length(expressed_genes))
-    print("Legth old, length young:")
+    print("Length old, length young:")
     print(c( sum(old_sum>10), sum(young_sum>10) ))
     
     
@@ -90,6 +90,13 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       batch = SC@meta.data$mouse.id # Using mouse id as batch
     if(data.type == "Age.Anno")
       batch = SC$orig.ident # using individual id as batch
+    if(data.type == "Blood_SC")
+      batch = SC$orig.ident  # ??? 
+    if(data.type == "MCA"){  # extract for each cell the individual identity 
+        batch = names(SC$orig.ident) # Get cells IDs
+        for(i in 1:length(SC$orig.ident))
+          batch[i] = str_split(batch[i], "\\.")[[1]][1]
+      }   
     
     DVT = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
     
