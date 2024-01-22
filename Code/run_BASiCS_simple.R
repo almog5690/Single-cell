@@ -2,7 +2,7 @@
 # Main script for analysis of single-cell gene-expression data
 data.type = "MCA" # "TM.facs"  # Blood_SC
 organ = "Liver" # skin has a small file "Aorta" # Blood (?) # smallest facs file, should be fastest 
-ct_name = "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
+ct_name = "Acinar cell" # "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
 # data.type = "Blood_SC"
 # organ = "Blood"
 # ct_name = "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 

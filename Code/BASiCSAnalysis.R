@@ -100,12 +100,14 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     
     DVT = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
     
-    # We preform the BASiCS only if both age group have more then 1 mouse  
-    if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
-      print("TISSUE DIMS: COUNTS:")
+    # We preform the BASiCS only if both age group have more than 1 mouse/cell  
+    if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|length(table(batch[(cell_types == ct_name) & old.ind]))<=1)){ 
+      print(paste0("Skipping Cell-type! ", ct_name, "; TISSUE DIMS: COUNTS(old):"))        # Skip cells with no BATCHES
       print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
-      print("BATCH LEN: ")
-      print(length(batch[cell_types == ct_name & old.ind]))
+      print("BATCH LENs (young, old): ")
+      print(length(batch[(cell_types == ct_name & young.ind)]))
+      print(length(batch[(cell_types == ct_name & old.ind)]))
+      
       
       # BASiCS data for old and young individuals
       old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & old.ind],
