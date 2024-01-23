@@ -15,7 +15,6 @@ source('scRNA_seq_config.R')
 source("BASiCSAnalysis.R")
 print("Loaded config file!")
 
-
 # Parameters ordered: data.type, organ, ct_name 
 args = commandArgs(trailingOnly=TRUE)  # Read from user 
 data.type = args[1] 

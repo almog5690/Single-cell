@@ -137,6 +137,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
 
 
 
+# Run BASiCS command for a single cell type 
 Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
   print("Starting cell type BASICS")
   cell_types[is.na(cell_types)] = ""  # get rid of NA cell types 
