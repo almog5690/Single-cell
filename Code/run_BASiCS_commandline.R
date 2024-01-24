@@ -27,9 +27,7 @@ if(length(args)<3)  # only tissues
 } else  # run cell type 
 {
   ct_name = args[3] 
-  
   print(paste0("Read BASiCS Input for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
-  
   
   # Need to read the single cell data first 
   print(paste0("Loading data from: ", paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")))  
