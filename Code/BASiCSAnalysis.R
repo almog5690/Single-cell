@@ -10,6 +10,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   organ.ind = which(samples$organs == organ)
   meta.data = get_meta_data(data.type)
   
+  print("Start running BASICS!")
   read.file <- paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")
   #  print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
   SC = readRDS(file = read.file) # Current tissue Seurat object
@@ -46,7 +47,8 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     
   }
   
-  earase = vector()
+  print("Filter cell types:")
+  erase = vector()
   # filtering the cell-types
   for(ct_ind in 0:n_cell_types){ 
     # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
@@ -54,16 +56,20 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind
+      
     if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
        sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
        sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
-      earase = c(earase,ct_name+1)
+      erase = c(erase,ct_name+1)
       next()
     }
   }
   # the vector of filtered cell-types
-  cells_ind = c(1:(n_cell_types+1))[-earase]
+  
+  cells_ind = c(1:(n_cell_types+1))[-erase]
   if(length(cells_ind) == 0) cells_ind = (1:(n_cell_types+1))
+  print("cells ind:")  
+  print(cells_ind)
   
   for(ct_ind in cells_ind){ # loop on cell types within tissue 
     print(paste0("Analyze cell type: ", cell_types_categories[ct_ind]))
@@ -71,6 +77,15 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind-1
+    if(cell_types_categories[ct_ind] != "Fibroblast")  # TEMP FOR DEBUG!!
+    {
+      print("Doesn't match cell type:")
+      print(cell_types_categories[ct_ind])
+      next
+    }
+      
+    print("Run Fibroblast!")
+    print(ct_name)
     
     # Filter genes with less then 10 reads for either age group
     old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
