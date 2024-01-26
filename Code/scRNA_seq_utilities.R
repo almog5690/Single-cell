@@ -463,7 +463,12 @@ tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set 
       old.ind = c(meta.data$Age %in% age.groups$old_ages_2)
     }
     n_cell <- length(meta.data$age)
-  } else  # All other datasets 
+  } else if(data.type == "MCA")
+  {
+    old.ind = SC$Age == "Old"
+    young.ind = SC$Age == "Young"
+    n_cell <- length(SC$CT)
+  }  else  # All other datasets 
   {
     young.ind = c(meta.data$age %in% age.groups$young_ages) # index for cells that came from 3 month old mouses
     old.ind = c(meta.data$age %in% age.groups$old_ages_1) # index for cells that came from old mouses

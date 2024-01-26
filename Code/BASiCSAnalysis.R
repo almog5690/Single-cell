@@ -57,6 +57,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     else
       ct_name = ct_ind
       
+    # Missing young ind !!!! 
     if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
        sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
        sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
@@ -77,14 +78,14 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind-1
-    if(cell_types_categories[ct_ind] != "Fibroblast")  # TEMP FOR DEBUG!!
+    if(cell_types_categories[ct_ind] != "T cell")  # TEMP FOR DEBUG!!
     {
       print("Doesn't match cell type:")
       print(cell_types_categories[ct_ind])
       next
     }
       
-    print("Run Fibroblast!")
+    print(paste0("Run! ", cell_types_categories[ct_ind]))
     print(ct_name)
     
     # Filter genes with less then 10 reads for either age group
