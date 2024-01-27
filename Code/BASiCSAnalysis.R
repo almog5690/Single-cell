@@ -77,7 +77,17 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     if(data.type == "Age.Anno")
       ct_name = cell_types_categories[ct_ind]
     else
-      ct_name = ct_ind-1
+      ct_name = ct_ind-1  # Why minus one? 
+    print("cell type category:")
+    print(cell_types_categories[ct_ind])
+    
+    print("All categories:")
+    print(cell_types_categories)
+    print("Total length categories: ")
+    print(length(cell_types_categories))
+    print("Current index: ")
+    print(ct_ind)
+    
     if(cell_types_categories[ct_ind] != "T cell")  # TEMP FOR DEBUG!!
     {
       print("Doesn't match cell type:")
