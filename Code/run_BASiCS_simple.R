@@ -45,8 +45,11 @@ if(run.celltype)
   cell_types = SC$CT
   unique_cell_types = unique(cell_types)
   counts.mat = as.matrix(SC@assays$RNA@counts)  # heavy code- convert to matrix
-  old.ind = SC$Age == "Old"
-  young.ind = SC$Age == "Young"
+  
+  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data), env=environment())
+  
+  #old.ind = SC$Age == "Old"
+  #young.ind = SC$Age == "Young"
   
   if(data.type == "MCA"){  # extract for each cell the individual identity 
     batch = names(SC$orig.ident) # Get cells IDs

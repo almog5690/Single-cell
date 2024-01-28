@@ -36,8 +36,10 @@ if(length(args)<3)  # only tissues
   cell_types = SC$CT
   unique_cell_types = unique(cell_types)
   counts.mat = as.matrix(SC@assays$RNA@counts)  # heavy code - convert to matrix
-  old.ind = SC$Age == "Old"
-  young.ind = SC$Age == "Young"
+  
+  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data), env=environment())
+#  old.ind = SC$Age == "Old"
+#  young.ind = SC$Age == "Young"
   batch = SC$orig.ident
   
   print(paste0("Running BASiCS for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
