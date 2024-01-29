@@ -58,7 +58,6 @@ if(run.celltype)
   } else
     batch = SC$orig.ident
   
-  
   # Remove NA cells (should be done inside function?)
   #  na.inds = which(is.na(counts.mat), arr.ind=TRUE)
   #  na.cols = union(na.inds[,2])
