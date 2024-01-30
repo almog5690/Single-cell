@@ -126,6 +126,7 @@ if(prepare.scripts)  # Make command line scripts for running on unix cluster
       }  # end loop on cell types
     } # end else
   }  # end loop on tissues
+
   #  if(!run.celltype)
   #  {
   #    sink(paste0("scripts/", data.type, "/run_BASiCS_all_tissues_types_", data.type, ".sh"))
