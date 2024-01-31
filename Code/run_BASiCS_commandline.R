@@ -1,6 +1,5 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data, or MCA  
 # Main script for analysis of single-cell gene-expression data
-
 print("R Version:")
 print(version)
 print("Start script:")
