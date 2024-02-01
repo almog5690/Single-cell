@@ -168,14 +168,12 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
         {
           gene.values.str <- impc.data$impc_via_category
           # Now parse: vital vs. non-vital
-          viability.str <-  c("Homozygous-Viable","Homozygous-Lethal", "Homozygous-Subviable", 
-                              "Homozygous-Subviable,Homozygous-Lethal",  "Hemizygous-Viable",                      
+          viability.str <-  c("Homozygous-Viable", "Homozygous-Lethal", "Homozygous-Subviable", 
+                              "Homozygous-Subviable,Homozygous-Lethal", "Hemizygous-Viable",                      
                               "Homozygous-Subviable,Homozygous-Viable", "Hemizygous-Lethal")
           viability.val <- c(1, 0, 0.5, 0.25, 0.75, 0.75, 0.25)
           mapping_table <- data.frame(strings = viability.str, values = viability.val)
           values_table <- setNames(mapping_table[,2], mapping_table[,1])
-          
-          #          gene.values <- rep(0, length(gene.values.str))
           gene.values <- sapply(gene.values.str, function(x) ifelse(x %in% names(values_table), values_table[x], NA))
         }
         if(organism == "mice")
