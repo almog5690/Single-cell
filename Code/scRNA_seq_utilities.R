@@ -122,7 +122,6 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     }
     if(feature.name == "alpha.missense")  # new conservation metric! compare it to gnomad!!
     {
-#      library(XLConnect)
       alpha <- read.delim(paste0(gene.data.dir, "alpha_missense_science.adg7492_data_s4.txt"))
       gene.names = toupper(alpha$gene) # making
       gene.values = alpha$mean_am_pathogenicity
@@ -155,7 +154,7 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
     }
     if(feature.name == "gene.age")  # extract gene age (T.B.D.)
     {
-      
+      # extract age of each gene 
     }
     
     # Features from the impc database
