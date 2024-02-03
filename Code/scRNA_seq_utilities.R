@@ -199,7 +199,6 @@ read_gene_features  <- function(feature.names, organism = "mice", force.rerun = 
   {
     gv.df[names(gv[[feature.name]]), feature.name] <- gv[[feature.name]]
   }
-  
   return(gv)
 }
 
@@ -219,6 +218,7 @@ list_to_common_dataframe <- function(l)
     df_common[names(l[[i]]), names(l)[i]] <- l[[i]]
   return(df_common)
 }
+
 
 # Compute features of expression (mean, overdispersion, variance ... )
 # for a given tissue/cell type
@@ -533,14 +533,8 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
     DVT.file.name = paste0(basics.DVT.dir, paste("DVT",tissue,cell_type,"same-mean.RData"))
   }  
   
-
   return(list(DVT.file.name=DVT.file.name, basics.chains.dir = basics.chains.dir, basics.DVT.dir = basics.DVT.dir))
 }
-
-
-
-
-
 
 
 #######################################################################
@@ -561,11 +555,11 @@ beta_diff_t = function(beta_1, X, Y)
   return(True)  
 }
   
-  
+ 
+# Interactions  
 Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,gene_feature,
                              Organ,Cell_type,feature_name)
 {
-  
   Disp_both = c(Disp_old,Disp_young) # Over-dispersion for old and young together
   Mean_both = c(Mean_old,Mean_young)# Mean expression for old and young together
   feature_both = rep(gene_feature[gene_names],2) # doubling the current gene feature
@@ -573,7 +567,6 @@ Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,g
   
   # linear regression with interaction
   lm_interaction = lm(log2(Disp_both) ~ feature_both + Age + log2(Mean_both) + Age*feature_both)
-  
   s = summary(lm_interaction) # linear regression summary
   
   # sd of the feature coefficient for youngs
@@ -583,14 +576,12 @@ Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,g
   t_sum = beta_sum/sd_sum # young feature T-statistic
   p_inter = pt(t_sum,df = s$df[2]) # young feature coefficient p_value
   
-  
   disp_reg_data_inter = data.frame("Organs" = Organ,"Cell_type" = Cell_type,
                                    lm_interaction$coefficients[2],lm_interaction$coefficients[5],beta_sum,
                                    summary(lm_interaction)$coef[2,4],summary(lm_interaction)$coef[5,4],p_inter)
                                                              
   names(disp_reg_data_inter)[3:8] = c(paste(feature_name,"beta",c("Old","Inter","Young"),sep = "_"),
                                  paste(feature_name,"p_val",c("Old","Inter","Young"),sep = "_"))
-  
   return(disp_reg_data_inter)
 }
 
