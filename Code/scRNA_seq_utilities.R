@@ -579,7 +579,6 @@ Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,g
   disp_reg_data_inter = data.frame("Organs" = Organ,"Cell_type" = Cell_type,
                                    lm_interaction$coefficients[2],lm_interaction$coefficients[5],beta_sum,
                                    summary(lm_interaction)$coef[2,4],summary(lm_interaction)$coef[5,4],p_inter)
-                                                             
   names(disp_reg_data_inter)[3:8] = c(paste(feature_name,"beta",c("Old","Inter","Young"),sep = "_"),
                                  paste(feature_name,"p_val",c("Old","Inter","Young"),sep = "_"))
   return(disp_reg_data_inter)
