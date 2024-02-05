@@ -1,4 +1,4 @@
-# Simple example of running BASiCS. Try Tabula Muris or Human data, or MCA  
+# Simple example of running BASiCS. Supports multiple datasets (Tabula Muris, Human data, MCA)  
 # Main script for analysis of single-cell gene-expression data
 print("R Version:")
 print(version)
