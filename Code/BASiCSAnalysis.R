@@ -15,7 +15,7 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   #  print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
   SC = readRDS(file = read.file) # Current tissue Seurat object
   counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data, SC), env=environment()) # set specific ages for all age groups in all datasets
   
   SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
   if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix

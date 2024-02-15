@@ -193,7 +193,7 @@ draw_cor_scatters_figure <- function(fig.num, data.types, feature.types, DF_cors
         cell_types_categories = meta.data[[tissue.ind]]$cell_ontology_class  # the names of the different cell-types
       k = which(cell_types_categories == cell_type) # type II pneumocyte cell index
       SC = readRDS(file = paste0(processed.data.dir, samples$organs[tissue.ind], ".", processed.files.str[data.types[i]], ".rds")) # Current (Lung) tissue seurat object
-      list2env(tissue_to_age_inds(data.types[i], samples$organs[tissue.ind], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+      list2env(tissue_to_age_inds(data.types[i], samples$organs[tissue.ind], groups, SC@meta.data, SC), env=environment()) # set specific ages for all age groups in all datasets
       counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the Lung tissue
       SC_gene_name = toupper(rownames(SC)) # genes names in upper case letters
       if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix

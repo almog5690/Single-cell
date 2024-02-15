@@ -272,7 +272,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   print("Finished reading Seurat object")
   
-  list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+  list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data, SeuratOutput), env=environment()) # set specific ages for all age groups in all datasets
   counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
   n.genes <- dim(counts.mat)[1]  # same number of genes for all cell types (could have many NAs)
   n.cells <- dim(counts.mat)[2]
@@ -446,7 +446,7 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
 # organ - tissue name
 # age.groups - set groups for young and old
 # meta.data - structure for meta data information
-tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data) { # set specific ages for all age groups in all datasets
+tissue_to_age_inds <- function(data.type, organ, age.groups, meta.data, SC=c()) { # set specific ages for all age groups in all datasets
   if(data.type == "Age.Anno")  # ignore groups and meta data. Remove very young. Set middle group as 'young'
   {
     young.ind = grepl("mid",Idents(SC))

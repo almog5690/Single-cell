@@ -46,7 +46,7 @@ if(run.celltype)
   unique_cell_types = unique(cell_types)
   counts.mat = as.matrix(SC@assays$RNA@counts)  # heavy code- convert to matrix
   
-  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data), env=environment())
+  list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data, SC), env=environment())
   
   #old.ind = SC$Age == "Old"
   #young.ind = SC$Age == "Young"

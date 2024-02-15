@@ -64,7 +64,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
 #    SC = readRDS(file = read.file) # Current tissue seurat object
 #    counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
-#    list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data), env=environment()) # set specific ages for all age groups in all datasets
+#    list2env(tissue_to_age_inds(data.type, samples$organs[i], groups, SC@meta.data, SC), env=environment()) # set specific ages for all age groups in all datasets
     
     #    n_cell = SC@assays$RNA@counts@Dim[2] # Number of cells
     #    n_genes = SC@assays$RNA@counts@Dim[1] # Number of genes
