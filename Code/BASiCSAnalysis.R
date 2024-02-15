@@ -36,32 +36,31 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
   }
   if(data.type == "Age.Anno"){ # Human data 
-    cell_types = (SC$CT)
+    cell_types = SC$CT
     n_cell_types = length(table(cell_types))
     cell_types_categories = names(table(SC$CT))
   }
   if(data.type == "MCA"){ # MCA mice
-    cell_types = (SC$CT) # Cell types vector
+    cell_types = SC$CT # Cell types vector
     n_cell_types = length(table(cell_types)) # number of cell types
     cell_types_categories = names(table(SC$CT))
-    
   }
   
   print("Filter cell types:")
   erase = vector()
   # filtering the cell-types
-  for(ct_ind in 0:n_cell_types){ 
+  for(ct_ind in 0:n_cell_types){ # why start from zero? 
     # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
-    if(data.type == "Age.Anno")
+    if(data.type %in% c("Age.Anno", "MCA"))
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind
       
-    # Missing young ind !!!! 
+    # Missing young or old ind !!!! 
     if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
        sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
        sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
-      erase = c(erase,ct_name+1)
+      erase = c(erase,  ct_ind+1) # ct_name+1)  # always keep in numbers 
       next()
     }
   }
@@ -72,9 +71,13 @@ BASiCS_analysis_tissue <- function(data.type, organ){
   print("cells ind:")  
   print(cells_ind)
   
+  if(data.type == "MCA")  # if(data.type == "Age.Anno")
+    cells_ind = cells_ind - 1
   for(ct_ind in cells_ind){ # loop on cell types within tissue 
     print(paste0("Analyze cell type: ", cell_types_categories[ct_ind]))
-    if(data.type == "Age.Anno")
+    if(data.type == "Age.Anno")  # if(data.type == "Age.Anno")
+      ct_name = cell_types_categories[ct_ind]
+    else if(data.type == "MCA")  # if(data.type == "Age.Anno")
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind-1  # Why minus one? 
@@ -88,12 +91,12 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     print("Current index: ")
     print(ct_ind)
     
-    if(cell_types_categories[ct_ind] != "T cell")  # TEMP FOR DEBUG!!
-    {
-      print("Doesn't match cell type:")
-      print(cell_types_categories[ct_ind])
-      next
-    }
+#    if(cell_types_categories[ct_ind] != "T cell")  # TEMP FOR DEBUG!!
+#    {
+#      print("Doesn't match cell type:")
+#      print(cell_types_categories[ct_ind])
+#      next
+#    }
       
     print(paste0("Run! ", cell_types_categories[ct_ind]))
     print(ct_name)
@@ -207,7 +210,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
 #    print(c( sum(old_sum>10), sum(young_sum>10) ))
     
     # BASiCS data for old and young mice  
-    print("Run newBASiCS_Data Old and young")
+    print("Run newBASiCS_Data cell-type Old and young")
+    save(counts.mat, expressed_genes, cell_types, ct_name, old.ind, batch, file = "tmp_working_BASICS.Rdata")
     old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, (cell_types == ct_name) & old.ind],
                             BatchInfo = batch[(cell_types == ct_name) & old.ind]) 
 #    print("Start YOUNG")
