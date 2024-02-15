@@ -84,12 +84,12 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     print("cell type category:")
     print(cell_types_categories[ct_ind])
     
-    print("All categories:")
-    print(cell_types_categories)
-    print("Total length categories: ")
-    print(length(cell_types_categories))
-    print("Current index: ")
-    print(ct_ind)
+#    print("All categories:")
+#    print(cell_types_categories)
+#    print("Total length categories: ")
+#    print(length(cell_types_categories))
+#    print("Current index: ")
+#    print(ct_ind)
     
 #    if(cell_types_categories[ct_ind] != "T cell")  # TEMP FOR DEBUG!!
 #    {
@@ -106,11 +106,10 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
     expressed_genes = which(old_sum > 10 & young_sum > 10)
     
-    print("Length expressed genes for tissue:")
-    print(length(expressed_genes))
-    print("Length old, length young:")
-    print(c( sum(old_sum>10), sum(young_sum>10) ))
-    
+#    print("Length expressed genes for tissue:")
+#    print(length(expressed_genes))
+#    print("Length old, length young:")
+#    print(c( sum(old_sum>10), sum(young_sum>10) ))
     
     # Dataset-specific code for individual cell type       
     if(data.type == "CR.Rat")
@@ -131,12 +130,11 @@ BASiCS_analysis_tissue <- function(data.type, organ){
     
     # We preform the BASiCS only if both age group have more than 1 mouse/cell  
     if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|length(table(batch[(cell_types == ct_name) & old.ind]))<=1)){ 
-      print(paste0("Skipping Cell-type! ", ct_name, "; TISSUE DIMS: COUNTS(old):"))        # Skip cells with no BATCHES
+      print(paste0("Running Cell-type! ", ct_name, "; TISSUE DIMS: COUNTS(old):"))        # Skip cells with no BATCHES
       print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
       print("BATCH LENs (young, old): ")
       print(length(batch[(cell_types == ct_name & young.ind)]))
       print(length(batch[(cell_types == ct_name & old.ind)]))
-      
       
       # BASiCS data for old and young individuals
       old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & old.ind],
