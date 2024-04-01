@@ -11,9 +11,9 @@ get_meta_data <- function(data.type, force.rerun = FALSE)
   set_data_dirs(data.type)
   meta.data.file <- paste0(processed.data.dir, 'meta.data.', processed.files.str[data.type], '.RData')
   if(file.exists(meta.data.file) & (force.rerun == FALSE)) {
-    print("Exists!")
-       load(meta.data.file)
-       return(meta.data)
+    print(paste0("Metadata Exists! ", meta.data.file))
+    load(meta.data.file)
+    return(meta.data)
   }
 
   if(data.type == "TM.droplet")

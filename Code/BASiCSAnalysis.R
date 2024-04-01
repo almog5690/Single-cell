@@ -81,8 +81,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
       ct_name = cell_types_categories[ct_ind]
     else
       ct_name = ct_ind-1  # Why minus one? 
-    print("cell type category:")
-    print(cell_types_categories[ct_ind])
+    print(paste0("cell type category: ", cell_types_categories[ct_ind]))
     
 #    print("All categories:")
 #    print(cell_types_categories)
@@ -98,8 +97,8 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
 #      next
 #    }
       
-    print(paste0("Run! ", cell_types_categories[ct_ind]))
-    print(ct_name)
+#    print(paste0("Run! ", cell_types_categories[ct_ind]))
+#    print(ct_name)
     
     # Filter genes with less then 10 reads for either age group
     old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
@@ -129,12 +128,13 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
     DVT = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
     print("Cell type statistics: TISSUE DIMS: COUNTS(old):")    
     print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
-    print("BATCH LENs (young, old): ")
-    print(length(batch[(cell_types == ct_name) & young.ind]))
-    print(length(batch[(cell_types == ct_name) & old.ind]))
-    print("TABLE BATCH LENs (young, old): ")
-    print(length(table(batch[(cell_types == ct_name) & young.ind])))
-    print(length(table(batch[(cell_types == ct_name) & old.ind])))
+    print(paste0("BATCH LENs (young, old): ", length(batch[(cell_types == ct_name) & young.ind]), " , ",  
+                                              length(batch[(cell_types == ct_name) & old.ind])))
+    print(paste0("TABLE BATCH LENs (young, old): ", length(table(batch[(cell_types == ct_name) & young.ind])), " , ",  
+                 length(table(batch[(cell_types == ct_name) & old.ind]))))
+#    print("TABLE BATCH LENs (young, old): ")
+#    print(length(table(batch[(cell_types == ct_name) & young.ind])))
+#    print(length(table(batch[(cell_types == ct_name) & old.ind])))
 
     
     if((rerun.flag <= 0) & file.exists(DVT$DVT.file.name))   # Check if output file exists: !!! 
@@ -177,7 +177,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
                            EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
       save(test, file = DVT$DVT.file.name) 
     } else
-      print("Skipping, filtering this cell type!!") # end if enough cells  
+      cat(paste0("Skipping, filtering this cell type!! (not enough mice for each group) ", ct_name, "\n---------\n---------\n\n")) # end if enough cells  
   }  # end loop on cell types
 }  
 
