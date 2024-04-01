@@ -4,7 +4,7 @@ library(BASiCS)
 
 
 # Run BASiCS for one tissue: loop on all cell types within the tissue 
-BASiCS_analysis_tissue <- function(data.type, organ){
+BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
   groups = dataset_to_age_groups(data.type)
   samples <- get_tissue_file_names(data.type)
   organ.ind = which(samples$organs == organ)
@@ -127,20 +127,41 @@ BASiCS_analysis_tissue <- function(data.type, organ){
       }   
     
     DVT = get_DVT_file_name(data.type, organ, cell_types_categories[ct_ind])
+    print("Cell type statistics: TISSUE DIMS: COUNTS(old):")    
+    print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
+    print("BATCH LENs (young, old): ")
+    print(length(batch[(cell_types == ct_name) & young.ind]))
+    print(length(batch[(cell_types == ct_name) & old.ind]))
+    print("TABLE BATCH LENs (young, old): ")
+    print(length(table(batch[(cell_types == ct_name) & young.ind])))
+    print(length(table(batch[(cell_types == ct_name) & old.ind])))
+
     
-    # We preform the BASiCS only if both age group have more than 1 mouse/cell  
-    if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|length(table(batch[(cell_types == ct_name) & old.ind]))<=1)){ 
-      print(paste0("Running Cell-type! ", ct_name, "; TISSUE DIMS: COUNTS(old):"))        # Skip cells with no BATCHES
-      print(dim(counts.mat[expressed_genes,cell_types == ct_name & old.ind]))
-      print("BATCH LENs (young, old): ")
-      print(length(batch[(cell_types == ct_name & young.ind)]))
-      print(length(batch[(cell_types == ct_name & old.ind)]))
-      
+    if((rerun.flag <= 0) & file.exists(DVT$DVT.file.name))   # Check if output file exists: !!! 
+    {
+      print(paste0("Skipping file = aready did this! ", ct_name))
+      next
+    }
+      # We preform the BASiCS only if both age groups have more than 1 mouse (doesn't matter how many cells!)
+    # NOTE! This filtering is only for BASICS, the over-dispersion - not for the mean analysis!
+    if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|length(table(batch[(cell_types == ct_name) & old.ind]))<=1))
+    { 
+      if(rerun.flag == -1)
+      {
+        print(paste0("This cell type should run!!!! ", ct_name, " in tissue: ", organ))
+        next
+      }
+        
+      print(paste0("Running Cell-type! ", ct_name, " in tissue: ", organ))        # Skip cells with no BATCHES
       # BASiCS data for old and young individuals
       old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & old.ind],
                               BatchInfo = batch[cell_types == ct_name & old.ind]) 
       young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes,cell_types == ct_name & young.ind],
                                 BatchInfo = batch[cell_types == ct_name & young.ind]) 
+      
+      
+      
+      
       
       print(paste0("Chains directory: ",  DVT$basics.chains.dir))
       # Creating BASiCS chain for old and young mice
@@ -148,20 +169,17 @@ BASiCS_analysis_tissue <- function(data.type, organ){
                               WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
       chain_young = BASiCS_MCMC(Data = young_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
                                 WithSpikes = F,PrintProgress = FALSE, StoreChains = FALSE, StoreDir = DVT$basics.chains.dir)
-      
       print(paste0("Start BASICS TEST: : "))
       # Differential over-dispersion test - only on genes without significant difference in mean expression
       test = BASiCS_TestDE(Chain1 = chain_old,Chain2 = chain_young,GroupLabel1 = "Old",
                            GroupLabel2 = "Young",OffSet = T,PlotOffset = F,Plot = F,
                            EpsilonM = 0, EpsilonD = log2(1.5),
                            EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
-      
-      save(test,file = DVT$DVT.file.name) 
-      
-    } # end if 
+      save(test, file = DVT$DVT.file.name) 
+    } else
+      print("Skipping, filtering this cell type!!") # end if enough cells  
   }  # end loop on cell types
 }  
-
 
 
 # Run BASiCS command for a single cell type 

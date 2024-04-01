@@ -1,7 +1,7 @@
 # Simple example of running BASiCS. Try Tabula Muris or Human data  
 # Main script for analysis of single-cell gene-expression data
 data.type = "MCA" # "TM.facs"  # Blood_SC
-organ = "Liver" # skin has a small file "Aorta" # Blood (?) # smallest facs file, should be fastest 
+organ = "Bladder" # "Liver" # skin has a small file "Aorta" # Blood (?) # smallest facs file, should be fastest 
 ct_name = "T cell" # "Acinar cell" # "Fibroblast" # "NK-FCER1G" # "ABC" "Naive-B" ## cell type example - change to a real name!! 
 # data.type = "Blood_SC"
 # organ = "Blood"
@@ -34,7 +34,7 @@ source('scRNA_seq_config.R')
 if(run.tissue)
 {
   print("Running BASiCS:")
-  BASiCS_analysis_tissue(data.type, organ)
+  BASiCS_analysis_tissue(data.type, organ, TRUE)
   print("Finished Running BASiCS!")
 }
 

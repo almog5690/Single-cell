@@ -18,6 +18,8 @@ print("Loaded config file!")
 args = commandArgs(trailingOnly=TRUE)  # Read from user 
 data.type = args[1] 
 organ = args[2]  
+rerun.flag = -1  # TEMP!!! Just list which files to run!!!! 
+
 
 if(length(args)<3)  # only tissues
 {
