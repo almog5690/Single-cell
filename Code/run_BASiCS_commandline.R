@@ -24,7 +24,7 @@ rerun.flag = -1  # TEMP!!! Just list which files to run!!!!
 if(length(args)<3)  # only tissues
 {
   print(paste0("Read BASiCS Input for data=", data.type, " tissue=", organ))  
-  BASiCS_analysis_tissue(data.type, organ)
+  BASiCS_analysis_tissue(data.type, organ, rerun.flag)
 } else  # run cell type 
 {
   ct_name = args[3] 
