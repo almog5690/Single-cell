@@ -17,6 +17,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
   counts.mat = as.matrix(SC@assays$RNA@data) # the data matrix for the current tissue
   list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data, SC), env=environment()) # set specific ages for all age groups in all datasets
   
+  
   SC_gene_name = toupper(rownames(SC)) # Gene names (in uppercase)
   if(length(SC_gene_name) != dim(counts.mat)[1]) { # For Rats, names are already in the matrix
     SC_gene_name = toupper(rownames(counts.mat)) 
@@ -190,6 +191,10 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
      sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
     print("The cell type don't have enough cells!")
+    print(paste0("Len cell types:", length(cell_types)))
+    print("ct_name: ")
+    print(ct_name)  # debug here!! 
+    
     return()
   }
   
