@@ -160,9 +160,6 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
                                 BatchInfo = batch[cell_types == ct_name & young.ind]) 
       
       
-      
-      
-      
       print(paste0("Chains directory: ",  DVT$basics.chains.dir))
       # Creating BASiCS chain for old and young mice
       chain_old = BASiCS_MCMC(Data = old_bs,N = 20000,Thin = 20,Burn = 10000,Regression = T,
@@ -183,7 +180,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
 
 
 # Run BASiCS command for a single cell type 
-Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch){
+Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, old.ind, young.ind, batch, rerun.flag = TRUE){
   print("Starting cell type BASICS")
   cell_types[is.na(cell_types)] = ""  # get rid of NA cell types 
   print("Filtering cell type BASICS")
@@ -205,6 +202,11 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
 
+  if((rerun.flag <= 0) & file.exists(DVT$DVT.file.name))   # Check if output file exists: !!! 
+  {
+    print(paste0("Skipping file: aready did this! ", ct_name, " ; ", organ, " ; ", DVT@DVT.file.name))
+    return(c())
+  }
   
   
   if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
@@ -224,6 +226,12 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
 #    print(length(expressed_genes))
 #    print("Legth old, length young:")
 #    print(c( sum(old_sum>10), sum(young_sum>10) ))
+    
+    if(rerun.flag == -1)
+    {
+      print(paste0("This cell type should run!!!! ", ct_name, " in tissue: ", organ))
+      return(c())
+    }
     
     # BASiCS data for old and young mice  
     print("Run newBASiCS_Data cell-type Old and young")

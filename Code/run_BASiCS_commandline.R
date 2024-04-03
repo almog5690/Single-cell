@@ -20,6 +20,8 @@ data.type = args[1]
 organ = args[2]  
 rerun.flag = 0 # 1: rerun everything, 0: rerun new files only, -1:  # TEMP!!! Just list which files to run!!!! 
 
+set_data_dirs(data.type)  # set data type variables 
+
 
 if(length(args)<3)  # only tissues
 {
