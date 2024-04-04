@@ -191,9 +191,12 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
      sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
     print("The cell type don't have enough cells!")
+    print(paste0("Yound length: ", length(young.ind), " ; sum: ", sum(young.ind)))
+    print(paste0("Old length: ", length(old.ind), " ; sum: ", sum(old.ind)))
     print(paste0("Len cell types:", length(cell_types)))
     print("ct_name: ")
     print(ct_name)  # debug here!! 
+    
     
     return()
   }
