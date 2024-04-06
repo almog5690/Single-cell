@@ -10,7 +10,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
   organ.ind = which(samples$organs == organ)
   meta.data = get_meta_data(data.type)
   
-  print("Start running BASICS!")
+  print("Start running BASICS for tissue!")
   read.file <- paste0(processed.data.dir, organ, ".", processed.files.str[data.type], ".rds")
   #  print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
   SC = readRDS(file = read.file) # Current tissue Seurat object
@@ -175,7 +175,7 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
                            EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
       save(test, file = DVT$DVT.file.name) 
     } else
-      cat(paste0("Skipping, filtering this cell type!! (not enough mice for each group) ", ct_name, "\n---------\n---------\n\n")) # end if enough cells  
+      cat(paste0("Skipping, filtering this cell type!! (not enough individuals for each group) ", ct_name, "\n---------\n---------\n\n")) # end if enough cells  
   }  # end loop on cell types
 }  
 
@@ -191,12 +191,11 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
      sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
      sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
     print("The cell type don't have enough cells!")
-    print(paste0("Yound length: ", length(young.ind), " ; sum: ", sum(young.ind)))
+    print(paste0("Young length: ", length(young.ind), " ; sum: ", sum(young.ind)))
     print(paste0("Old length: ", length(old.ind), " ; sum: ", sum(old.ind)))
     print(paste0("Len cell types:", length(cell_types)))
     print("ct_name: ")
     print(ct_name)  # debug here!! 
-    
     
     return()
   }
@@ -269,7 +268,9 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     save(test,file = DVT$DVT.file.name) 
     return(test)
     
-  } # end if 
+  } else   # end if filtering by # of individuals
+    cat(paste0("Skipping, filtering this cell type!! (not enough individuals for each group) ", ct_name, "\n---------\n---------\n\n")) # end if enough cells  
+  
   
 }
 

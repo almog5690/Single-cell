@@ -44,7 +44,12 @@ if(length(args)<3)  # only tissues
   list2env(tissue_to_age_inds(data.type, organ, groups, SC@meta.data, SC), env=environment())
 #  old.ind = SC$Age == "Old"
 #  young.ind = SC$Age == "Young"
-  batch = SC$orig.ident
+  if(data.type == "MCA"){  # extract for each cell the individual identity 
+    batch = names(SC$orig.ident) # Get cells IDs
+    for(i in 1:length(SC$orig.ident))
+      batch[i] = str_split(batch[i], "\\.")[[1]][1]
+  } else
+    batch = SC$orig.ident
   
   print(paste0("Running BASiCS for data=", data.type, " tissue=", organ, " cell-type=", ct_name))  
   # Remove NA cells (should be done inside function?)
