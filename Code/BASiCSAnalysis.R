@@ -177,6 +177,8 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
     } else
       cat(paste0("Skipping, filtering this cell type!! (not enough individuals for each group) ", ct_name, "\n---------\n---------\n\n")) # end if enough cells  
   }  # end loop on cell types
+  
+  cat(paste0("\n--------------\n--------------\n ------- Finished BASICS all cell types in tissue: ", organ, " -----\n--------------\n\n"))
 }  
 
 
@@ -266,6 +268,7 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
                          EpsilonR = log2(1.5)/log2(exp(1)), EFDR_M = 0.10, EFDR_D = 0.10) 
     print("Save and return:")
     save(test,file = DVT$DVT.file.name) 
+    cat(paste0("\n--------------\n--------------\n ------- Finished BASICS cell type: ", ct_name, " in tissue: ", organ, " -----\n--------------\n\n"))
     return(test)
     
   } else   # end if filtering by # of individuals
