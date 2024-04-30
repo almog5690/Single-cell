@@ -21,6 +21,8 @@ processed.files.str <- c("facs", "drop", "rat", "anno", "SC", "MCA") # match the
 names(processed.files.str) = data.types
 
 
+
+
 # Main script for analysis of single-cell gene-expression data
 if(user.name == "Almog")
 {
@@ -45,6 +47,8 @@ if(user.name == "Unix")
 }
 code.dir <- paste0(main.dir, 'Code/')  # src files 
 gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
+res.dir <- paste0(main.data.dir, "Results")
+
 
 #data.dir <- paste0(main.data.dir, 'Data/', data.dirs[data.type], '/')
 #raw.data.dir <- paste0(data.dir, 'Raw/')  # For raw scRNA-seq gene expression files (one per tissue). Format: h5ad (may differ for different datasets) 
@@ -90,8 +94,8 @@ source("OverdispersionFigures.R")
 # Features to examine (currently, only the first two are implemented)
 feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG")  # These aren't ready yet: "GC", "CpG%",  "gene.age", )
 
-# Actual regression runs for the paper: 
-paper.expression.stat.y <- c("mean", "mean", "overdispersion", "overdispersion", "overdispersion")
-paper.expression.stat.x <- c("",     "", "mean", "mean", "mean")
-paper.features <- list("gene.len", "selection", "gene.len", "selection", c("selection", "gene.len")) # last one of two feature covariates is for supp. info.
+# Actual regression runs for the paper:  (5 models + additional five for fold-change?)
+paper.expression.stat.y <- c("mean", "mean", "overdispersion", "overdispersion") # , "overdispersion")  # , "overdispersion")
+paper.expression.stat.x <- c("",     "", "mean", "mean") # , "mean") # , "age")  # age is special, should use a different code in expression regression analysis!
+paper.features <- list("gene.len", "selection", "gene.len", "selection") # , c("selection", "gene.len")) # last one of two feature covariates is for supp. info.
 

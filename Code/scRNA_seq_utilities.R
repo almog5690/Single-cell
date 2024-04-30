@@ -539,7 +539,10 @@ get_DVT_file_name <- function(data.type, tissue, cell_type)
 
 #######################################################################
 # Function for testing the difference between two Spearman correlations 
-#spearman_dif_t = function(r13, r23, r12, nsize){
+# Input: 
+# r13, r23, r12 - three pairwise correlations
+# nsize - sample size
+# spearman_dif_t = function(r13, r23, r12, nsize){
 tdif <- function(r13,r23,r12,nsize)
 {
   tdif = (r13 - r23)*sqrt((nsize-3)*(1+r12)/(2*(1-r13^2-r23^2-r12^2 + 2*r13*r23*r12)))
@@ -583,4 +586,61 @@ Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,g
                                  paste(feature_name,"p_val",c("Old","Inter","Young"),sep = "_"))
   return(disp_reg_data_inter)
 }
+
+
+# Post-processing utilities for tables ...
+post_process_reg_table <- function(paper.DF, output.df.file.name = "")
+{
+  n.data.types = length(data.types)
+  
+  n.rows = 2*n.paper.reg # young,old and fc for each reg. type  # + 2 for regressing on age (need to add separately)
+  
+  model.df =data.frame(matrix(ncol = 3, nrow = n.rows))
+  colnames(model.df) <- c("Model", "Covariate", "Hypothesis")
+  for(i in 1:n.paper.reg)  # run different regression types 
+  {
+    model.df[i*2-1, "Model"] <- paste0(paper.expression.stat.y[[i]],  " ~ ", paper.features[[i]])
+    model.df[i*2, "Model"] <- paste0("d(", paper.expression.stat.y[[i]],  ") ~ ", paper.features[[i]])
+    
+    model.df[i*2-1, "Covariate"] <- paper.expression.stat.x[[i]]
+    if(paper.expression.stat.x[[i]] != "")
+      model.df[i*2, "Covariate"] <- paste0("d(", paper.expression.stat.x[[i]], ")")
+  }
+    
+              
+  column_names <- paste(rep(data.types, each=3),  rep(c("direction", "young.vs.old", "pvalue"), 3))
+  output.df <- data.frame(matrix(ncol = length(column_names), nrow = n.rows))
+  colnames(output.df) <- column_names
+  
+  data.ctr = 1
+  for(data.type in data.types)  # loop on datasets
+  {
+    print(paste0("Post-process Regression Results data: ", data.type))
+    n.cell.types = nrow(paper.DF[[data.ctr]][[1]])
+    for(i in 1:n.paper.reg)  # run different regression types 
+    {
+      num.young.bigger <- sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_young_beta")] > 
+            paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_old_beta")])
+      num.old.bigger <- n.cell.types - num.young.bigger
+      output.df[i*2-1, data.ctr*3-1] = paste0(num.young.bigger, "/", num.old.bigger)  # F young/old counts
+      output.df[i*2-1, data.ctr*3] = 2*min(pbinom(num.young.bigger, n.cell.types, 0.5), 
+                                           pbinom(num.old.bigger, n.cell.types, 0.5))  # G young/old pvalue. Binomial two sided test
+      
+      num.fc.pos <- sum(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_beta")] > 0)
+      num.fc.neg <- n.cell.types - num.fc.pos
+      output.df[i*2, data.ctr*3-1] = paste0(num.fc.pos, "/", num.fc.neg)  # fold-change pos/neg
+      output.df[i*2, data.ctr*3] = t.test(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_beta")])$p.val # t-test for all fc betas: is the mean significantly different from zero? 
+    }
+    data.ctr <- data.ctr + 1
+  }
+  
+  if (!file.exists(res.dir)) 
+    dir.create(res.dir)
+  
+  output.df <- cbind(model.df, output.df) # add few columns with model names 
+  write.csv(output.df, output.df.file.name) # Return and save to file 
+  return(output.df)
+  
+}
+
 

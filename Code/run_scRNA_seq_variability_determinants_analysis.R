@@ -3,21 +3,35 @@
 
 # New: read from the command line !!! 
 args = commandArgs(trailingOnly=TRUE)
+if(!exists("user.name"))  # set default values 
+  user.name = "Or" #  "Almog"  # Or # Unix 
+if(!exists("data.type"))  # set default values 
+  data.type = "TM.facs"  # Choose one type for analysis (can later loop over multiple datasets)
+if(user.name == "Almog")
+  main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+if(user.name == "Or")
+  main.dir = "C:/Code/Github/Single-cell/" 
+# Change to your local path. This path should be used everywhere as the main source path
+if(user.name == "Unix")
+  main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
+code.dir <- paste0(main.dir, 'Code/')  # src files 
+setwd(code.dir)
 
 source("scRNA_seq_config.R")
 
 # What analysis to do: 
-for.paper = FALSE  # which analysis to do 
+for.paper = TRUE # FALSE  # which analysis to do 
 preprocess = FALSE
 reg.analysis = TRUE
-reg.figures = TRUE
+reg.figures = FALSE
+reg.summary.table = TRUE
 # var.analysis = TRUE
 # var.figures = TRUE
 
 
 if(for.paper == FALSE)  # Run one regression : choose the response, the expression covariates, and the gene features 
 {
-  data.types = c("TM.facs")  # Data type: Tabule-Muris facs 
+  data.types = c("TM.facs")  # Data type: Tabula-Muris facs 
   feature.types = c("alpha.missense")  # gene feature: alpha-missnese gene conservation 
   expression.stat.y = c("mge")  # response: over-dispersion
   expression.stat.x = c("") # expression covariate: mean gene expression 
@@ -52,22 +66,33 @@ if(preprocess)
 #                      2, feature.types = "gene.len") # Choose specific figure (no need data.type. Figure combines droplet+facs)
 
 
-
+# Run entire analysis for paper 
 if(for.paper)
 {
+  data.types = data.types[c(1,2,3)]  # facs, droplet, rats. Currently no MCA!! (memory problem. Need to insert Almog's code working on each cell type separately!)
+  data.dirs = data.dirs[c(1,2,3)]  
+  processed.files.str = processed.files.str[c(1,2,3)]
+  
   ctr <- 1
   n.paper.reg <- length(paper.expression.stat.y)
   paper.DF <- vector("list", length(data.types))
   if(reg.analysis)  # regression with different covariates and response expression variables 
-    for(data.type in data.types)
+    for(data.type in data.types)  # loop on datasets
     {
+      print(paste0("Run Regression data: ", data.type))
       paper.DF[[ctr]] <- vector("list", n.paper.reg)
       for(i in 1:n.paper.reg)  # run different regression types 
         paper.DF[[ctr]][[i]] = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
-                                                              expression.stat.x = paper.expression.stat.x[i], expression.stat.y = paper.expression.stat.y[i], 
+                                                              expression.stat.x = paper.expression.stat.x[i], 
+                                                              expression.stat.y = paper.expression.stat.y[i], 
                                                               force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
       ctr <- ctr + 1
     }
+  
+  if(reg.summary.tables)   # take results structure paper.DF and make table with numbers of young/old positive/negative coefficients
+  {
+    post_process_reg_table(paper.DF, paste0(res.dir, "/summary_table.csv")) # post-processing 
+  }
   
   if(reg.figures) # plot figures for paper 
   {
@@ -77,7 +102,6 @@ if(for.paper)
                               fig.num, feature.types = feature.types) # Choose specific figure (no need data.type. Figure combines droplet+facs)
     
   }
-  
 } else # here do ONE custom analysis 
 {
   if(reg.analysis)  # regression with different covariates and response expression variables 
@@ -107,5 +131,4 @@ if(for.paper)
     draw_expr_reg_figures(c("TM.facs", "TM.droplet", "CR.Rat"), expr.stat.y = "overdispersion", expr.stat.x = c("mean"), 666, feature.types = feature.types)
   }
 }  # end if paper analysis 
-
 
