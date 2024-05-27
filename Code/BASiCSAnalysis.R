@@ -57,10 +57,10 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
     else
       ct_name = ct_ind
       
-    # Missing young or old ind !!!! 
+    # Filter cell types with missing young or old ind !!!! 
     if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
-       sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
-       sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
+       sum((cell_types==ct_name)&young.ind, na.rm=TRUE) < 20 | 
+       sum((cell_types==ct_name)&old.ind, na.rm=TRUE) < 20){  # should be old !!! (not !young.ind)
       erase = c(erase,  ct_ind+1) # ct_name+1)  # always keep in numbers 
       next()
     }
@@ -102,8 +102,8 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
 #    print(ct_name)
     
     # Filter genes with less then 10 reads for either age group
-    old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)]) 
-    young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)])
+    old_sum = rowSums(counts.mat[,(cell_types==ct_name) & old.ind]) 
+    young_sum = rowSums(counts.mat[,(cell_types==ct_name) & young.ind])
     expressed_genes = which(old_sum > 10 & young_sum > 10)
     
 #    print("Length expressed genes for tissue:")
@@ -145,7 +145,8 @@ BASiCS_analysis_tissue <- function(data.type, organ, rerun.flag = TRUE){
     }
       # We preform the BASiCS only if both age groups have more than 1 mouse (doesn't matter how many cells!)
     # NOTE! This filtering is only for BASICS, the over-dispersion - not for the mean analysis!
-    if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|length(table(batch[(cell_types == ct_name) & old.ind]))<=1))
+    if(!(length(table(batch[(cell_types == ct_name) & young.ind]))<=1|
+         length(table(batch[(cell_types == ct_name) & old.ind]))<=1))
     { 
       if(rerun.flag == -1)
       {
@@ -190,8 +191,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
   
   # filtering the cell-types
   if(sum(cell_types==ct_name, na.rm=TRUE)<100 | 
-     sum((cell_types==ct_name)&(young.ind), na.rm=TRUE) < 20 | 
-     sum((cell_types==ct_name)&(!young.ind), na.rm=TRUE) < 20){
+     sum((cell_types==ct_name)&young.ind, na.rm=TRUE) < 20 | 
+     sum((cell_types==ct_name)&old.ind, na.rm=TRUE) < 20){  # changed filtering to be symmetric
     print("The cell type don't have enough cells!")
     print(paste0("Young length: ", length(young.ind), " ; sum: ", sum(young.ind)))
     print(paste0("Old length: ", length(old.ind), " ; sum: ", sum(old.ind)))
@@ -205,8 +206,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
   print("Filter genes:")
   
   # Filter genes with less then 10 reads for either age group
-  old_sum = rowSums(counts.mat[,(cell_types==ct_name & old.ind)], na.rm = TRUE) 
-  young_sum = rowSums(counts.mat[,(cell_types==ct_name & young.ind)], na.rm = TRUE)
+  old_sum = rowSums(counts.mat[,(cell_types==ct_name) & old.ind], na.rm = TRUE) 
+  young_sum = rowSums(counts.mat[,(cell_types==ct_name) & young.ind], na.rm = TRUE)
   expressed_genes = which(old_sum > 10 & young_sum > 10)
   
   DVT = get_DVT_file_name(data.type, organ, ct_name)
@@ -218,7 +219,8 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
   }
   
   
-  if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
+  if(!(length(table(batch[cell_types == ct_name & young.ind]))==1|
+       length(table(batch[cell_types == ct_name & old.ind]))==1)){ 
 #    print("Start BASICS CELL TYPE ANALYSIS")
 #    cc = counts.mat[expressed_genes,cell_types == ct_name & old.ind]
 #    print("OK COUNTS, dim cc:")
@@ -247,7 +249,6 @@ Cell_type_BASiCS = function(data.type, organ, cell_types, ct_name, counts.mat, o
     save(counts.mat, expressed_genes, cell_types, ct_name, old.ind, batch, file = "tmp_working_BASICS.Rdata")
     old_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, (cell_types == ct_name) & old.ind],
                             BatchInfo = batch[(cell_types == ct_name) & old.ind]) 
-#    print("Start YOUNG")
     young_bs = newBASiCS_Data(Counts = counts.mat[expressed_genes, cell_types == ct_name & young.ind],
                               BatchInfo = batch[cell_types == ct_name & young.ind]) 
     

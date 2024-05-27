@@ -96,6 +96,10 @@ feature.types = c("gene.len", "selection", "TATA", "mRNA.half.life", "GC", "CpG"
 
 # Actual regression runs for the paper:  (5 models + additional five for fold-change?)
 paper.expression.stat.y <- c("mean", "mean", "overdispersion", "overdispersion") # , "overdispersion")  # , "overdispersion")
-paper.expression.stat.x <- c("",     "", "mean", "mean") # , "mean") # , "age")  # age is special, should use a different code in expression regression analysis!
+paper.expression.stat.x <- c("", "", "mean", "mean") # , "mean") # , "age")  # age is special, should use a different code in expression regression analysis!
 paper.features <- list("gene.len", "selection", "gene.len", "selection") # , c("selection", "gene.len")) # last one of two feature covariates is for supp. info.
 
+# First: is correlation positive or negative, second: is it stronger in young or in old. 
+# For example: neg old means that we expect negative correlations, and that the correlations will be larger in absolute value in old
+paper.hypothesis <- c("neg,old", "pos,young", "pos(?),old(?)", "neg,young")  
+paper.fc.hypothesis <- c("neg", "neg", "neg", "pos")  # is the correlation of old-young vs. feature positive or negative

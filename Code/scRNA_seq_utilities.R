@@ -69,11 +69,11 @@ get_tissue_file_names <- function(data.type)
   return(list(file.names = file.names, organs = organs))
 }
 
+
 # Filter cells from an expression matrix (not used yet. Should be part of analysis)
 filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
 {
   unique_cell_types = unique(cell_types)
-  
   n_cell_types = length(unique_cell_types)  #  max(cell_types) # Number of cell types
   erase = vector()
   
@@ -90,6 +90,8 @@ filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
   if(length(cells_ind) == 0) cells_ind = unique_cell_types # (1:(n_cell_types+1))
   return(cells_ind) # indices of cells that we keep 
 }
+
+
 
 
 # Read feature files (selection, length, GC-content etc. )
@@ -228,9 +230,16 @@ list_to_common_dataframe <- function(l)
 # age.groups - compute for each group separately
 # Need both organ and Seurat output (it doesn't contain the organ/tissue)
 # Take list of data frames for all cell types  
+# fc.method = How to compute fold-change: Default: Compute ourselves just take log of old/young ratio
+#                                         Seurat: (find.markers) - only for mean (currently used for analysis)           
+#                                         BASiCS: Can work for both mean and overdispersion (not implemented)
+# Output: 
+# DF.expr.stats - data frame with mean, overdispersion ... 
+# cell_types_categories - 
+# cells_ind - ??
 extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
                                           age.groups = c("young", "old", "all", "fc"), 
-                                          SeuratOutput=c(), BASiCSOutput = c(), force.rerun = FALSE)
+                                          SeuratOutput=c(), BASiCSOutput = c(), fc.method = "log_old_minus_young", force.rerun = FALSE)
 {
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', organ, '.',
@@ -271,9 +280,11 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
     # SeuratOutput = readRDS(file = "D:/Human-Blood/Blood.SC.rds") # HARD-CODED Current tissue Seurat object
   
   print("Finished reading Seurat object")
+  print(names(SeuratOutput@meta.data))
   
   list2env(tissue_to_age_inds(data.type, organ, groups, SeuratOutput@meta.data, SeuratOutput), env=environment()) # set specific ages for all age groups in all datasets
   counts.mat = as.matrix(SeuratOutput@assays$RNA@data) # the data matrix for the current tissue
+  print("Converted Seurat object to matrix")
   n.genes <- dim(counts.mat)[1]  # same number of genes for all cell types (could have many NAs)
   n.cells <- dim(counts.mat)[2]
   n.groups <- length(age.groups)
@@ -285,6 +296,10 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   {
     cell_types = SeuratOutput@meta.data$CT # Cell types vector
     cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
+  } else if (data.type == "MCA") # Other data types, including MCA (?)
+  {
+    cell_types = SeuratOutput@meta.data$CT # Cell types vector
+    cell_types_categories = unique(SeuratOutput@meta.data$CT) # Cell type names. Missing variable meta.data.drop
   } else
   {
     cell_types = SeuratOutput@meta.data$cell.ontology.class # Cell types vector
@@ -292,9 +307,11 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   }
   cells_ind = filter_cells(cell_types, young.ind, old.ind, filter.params)  #  unique(cell_types)+1 # NO FILTERING NOW !!!
   n.cell.types <- length(cells_ind) # number of cell types in tissue
-  
+
+      
   for(cell.type in 1:length(cells_ind))  # First load data if not loaded already 
   {
+    print(paste0("Parse data for cell type: ", cell_types_categories[cell.type]))
     DF.expr.stats[[cell.type]] <- as.data.frame(matrix(NA ,nrow = n.genes, ncol = length(stats.col.names))) # n.stats*n.groups+1) # Set negatives 
     colnames(DF.expr.stats[[cell.type]]) <- stats.col.names
     rownames(DF.expr.stats[[cell.type]]) <- toupper(rownames(SeuratOutput@assays$RNA@data))
@@ -317,12 +334,13 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
         next  # move to next cell type
       }
       
-      # Extract overdispersion features !!! 
+      # Extract overdispersion features
       df.od = test@Results$Disp@Table
       df.od$GeneName = toupper(df.od$GeneName) # Uppercasing gene names
       df.od = df.od[!df.od$ResultDiffDisp %in% c("ExcludedFromTesting"),] # Filtering genes significant difference in mean expression
     }  # end if overdispersion (read from BASiCS)
     
+    print("Go over age groups")
     for(age.group in age.groups)  # loop on age groups
     {
       cur.cell.ind = switch(age.group, # Indices of cells in each group
@@ -332,7 +350,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
                        "fc" = young.ind)  & (cell_types==cells_ind[cell.type]) # take only cell type . Assume that cell typea are numbers starts with zero 
       cur.cell.ind[is.na(cur.cell.ind)] = FALSE
       # Filter genes with low expression for old/young (less than 10 counts). Keep indices of genes FILTER BY ALL!!!
-      if(age.group == "fc")  #union young or old 
+      if(age.group == "fc")  # union young or old 
         cur.gene.ind = rowSums(SeuratOutput@assays$RNA@counts[, young.ind]) > filter.params$min.count |
         (rowSums(SeuratOutput@assays$RNA@counts[, old.ind]) > filter.params$min.count )
       else
@@ -344,18 +362,36 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
       {
         if(stat == "mean")
         {
-          if(age.group == "fc")  # union young or old 
+          if(age.group == "fc")  # union young or old. fc = log(old) - log(young) 
           {
-            bulk.data.types <- c()  # add bulk data types with fold change information
-            if(data.type %in% bulk.data.types)
-              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- c() # read excel TBD
-            else
+            # TODO: ENABLE READING FROM BASICS OUTPUT INSTEAD OF LOG-DIFFERENEC
+            if(fc.method == "log_old_minus_young")
               DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( # add regularization
                 (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] + filter.params$pseudo.count) / 
                   (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")] + filter.params$pseudo.count)) # Take only filtered cells. why? 
+            if(fc.method == "seurat") # works only for mean .. 
+            {
+              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- 9999 # XXX ?? ADD CODE 
+            }
+            if(fc.method == "basics") # can work for both mean and od, currently used only for od. 
+            {
+              load(BASiCS.files$test) # load BASICS object 
+              df.mean = test@Results$Mean@Table
+              df.mean$GeneName = toupper(df.mean$GeneName) # Uppercasing gene names
+              DF.expr.stats[[cell.type]][cur.gene.ind , paste0(stat, "_fc")] = df.mean$MeanFC # ?? ADD
+            }
+              
           } else             # Repeat for all age groups and features 
-            DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
+          {
+            if(sum(cur.cell.ind) == 1)
+              DF.expr.stats[[cell.type]][cur.gene.ind , paste0(stat, "_", age.group)] <- 
+                counts.mat[cur.gene.ind, cur.cell.ind]
+            else
+              DF.expr.stats[[cell.type]][cur.gene.ind , paste0(stat, "_", age.group)] <- 
+                rowMeans(counts.mat[cur.gene.ind, cur.cell.ind])  # Take only filtered cells. why? 
+          }
         }
+        
         if(stat == "overdispersion")
         {
           od.str = switch(age.group, 
@@ -381,6 +417,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   } # end loop on cell types
   
   save(DF.expr.stats, cell_types_categories, cells_ind, file=expression.statistics.outfile) # Save results !!! 
+  print("Finished reading and saving data matrix")
   return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
 }
 
@@ -589,13 +626,14 @@ Interaction_reg <- function(Disp_old,Disp_young,Mean_old,Mean_young,gene_names,g
 
 
 # Post-processing utilities for tables ...
-post_process_reg_table <- function(paper.DF, output.df.file.name = "")
+post_process_reg_table <- function(paper.DF, output.df.file.name = "", use.beta = TRUE)
 {
-  n.data.types = length(data.types)
-  
+  stat_str = ifelse(use.beta, "beta", "cor")
+    
+    n.data.types = length(data.types)
   n.rows = 2*n.paper.reg # young,old and fc for each reg. type  # + 2 for regressing on age (need to add separately)
   
-  model.df =data.frame(matrix(ncol = 3, nrow = n.rows))
+  model.df = data.frame(matrix(ncol = 3, nrow = n.rows))
   colnames(model.df) <- c("Model", "Covariate", "Hypothesis")
   for(i in 1:n.paper.reg)  # run different regression types 
   {
@@ -605,10 +643,12 @@ post_process_reg_table <- function(paper.DF, output.df.file.name = "")
     model.df[i*2-1, "Covariate"] <- paper.expression.stat.x[[i]]
     if(paper.expression.stat.x[[i]] != "")
       model.df[i*2, "Covariate"] <- paste0("d(", paper.expression.stat.x[[i]], ")")
+    
+    model.df[i*2-1, "Hypothesis"] <- paper.hypothesis[[i]]
+    model.df[i*2, "Hypothesis"] <- paper.fc.hypothesis[[i]]
   }
     
-              
-  column_names <- paste(rep(data.types, each=3),  rep(c("direction", "young.vs.old", "pvalue"), 3))
+  column_names <- paste(rep(data.types, each=3),  rep(c("pos/neg", "y>o/o>y", "pval"), 3), sep=":")
   output.df <- data.frame(matrix(ncol = length(column_names), nrow = n.rows))
   colnames(output.df) <- column_names
   
@@ -619,17 +659,32 @@ post_process_reg_table <- function(paper.DF, output.df.file.name = "")
     n.cell.types = nrow(paper.DF[[data.ctr]][[1]])
     for(i in 1:n.paper.reg)  # run different regression types 
     {
-      num.young.bigger <- sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_young_beta")] > 
-            paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_old_beta")])
+      num.young.bigger <- sum(abs(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_young_", stat_str)]) > 
+            abs(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_old_", stat_str)]))
       num.old.bigger <- n.cell.types - num.young.bigger
-      output.df[i*2-1, data.ctr*3-1] = paste0(num.young.bigger, "/", num.old.bigger)  # F young/old counts
+      num.pos <- sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_young_", stat_str)] > 0) + 
+        sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_old_", stat_str)] > 0)
+      num.neg <- sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_young_", stat_str)] <= 0) + 
+        sum(paper.DF[[data.ctr]][[i]] [paste0(paper.features[[i]], "_old_", stat_str)] <= 0)
+      
+      output.df[i*2-1, data.ctr*3-2] = ifelse(num.pos > num.neg, 
+                                              paste0("pos: ", as.character(num.pos), '/', as.character(num.neg)), 
+                                              paste0("neg: ", as.character(num.pos), '/', as.character(num.neg)))
+      
+      output.df[i*2-1, data.ctr*3-1] = ifelse(num.young.bigger > num.old.bigger,
+                                              paste0("young: ", num.young.bigger, "/", num.old.bigger), 
+                                              paste0("old: ", num.young.bigger, "/", num.old.bigger)) # F young/old counts
       output.df[i*2-1, data.ctr*3] = 2*min(pbinom(num.young.bigger, n.cell.types, 0.5), 
                                            pbinom(num.old.bigger, n.cell.types, 0.5))  # G young/old pvalue. Binomial two sided test
       
-      num.fc.pos <- sum(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_beta")] > 0)
+      num.fc.pos <- sum(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_", stat_str)] > 0)
       num.fc.neg <- n.cell.types - num.fc.pos
-      output.df[i*2, data.ctr*3-1] = paste0(num.fc.pos, "/", num.fc.neg)  # fold-change pos/neg
-      output.df[i*2, data.ctr*3] = t.test(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_beta")])$p.val # t-test for all fc betas: is the mean significantly different from zero? 
+      
+      tmp_str = paste0(num.fc.pos, "/", num.fc.neg)
+      output.df[i*2, data.ctr*3-2] = ifelse(num.fc.pos > num.fc.neg, paste0("pos: ", tmp_str), paste0("neg: ", tmp_str)) # fold change
+      output.df[i*2, data.ctr*3-1] = ""
+      #      output.df[i*2, data.ctr*3-1] = paste0(num.fc.pos, "/", num.fc.neg)  # fold-change pos/neg
+      output.df[i*2, data.ctr*3] = t.test(paper.DF[[data.ctr]][[i]][paste0(paper.features[[i]], "_fc_", stat_str)])$p.val # t-test for all fc coefficients: is the mean significantly different from zero? 
     }
     data.ctr <- data.ctr + 1
   }

@@ -80,9 +80,25 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
     
     # New: use utility to extract statistics: can be very heavy for overdispersion
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 
-                                                expression.stats = expression.stats, SeuratOutput=c(), force.rerun = TRUE) # extract means
-    
-
+                                                expression.stats = expression.stats, 
+                                                SeuratOutput=c(), force.rerun = TRUE) # extract means
+    bad_tissue = FALSE
+    print(names(expr.stats))
+    check_stats = intersect(c("mean_young", "mean_old", "overdispersion_young", "overdispersion_old"), 
+                            names(expr.stats))         
+    for(s in check_stats)
+    {
+      if(all(is.na(expr.stats[s]) | is.nan(expr.stats[s])))
+      {
+        print("Check NA: ")
+        print(s)
+        bad_tissue = TRUE
+        print(paste0("Skip tissue: ", samples$organs[i], " , no category: ", s))
+        break
+      }
+    }
+    if(bad_tissue)
+      next
     read.file <- paste0(processed.data.dir, samples$organs[i], ".", processed.files.str[data.type], ".rds")
     print(paste0("Read file ", i, " out of ", length(samples$organs), ": ", basename(read.file)))
     cells_ind = which(!unlist(lapply(expr.stats$DF.expr.stats, is.null)))
@@ -100,7 +116,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       #      cur_counts.mat <- counts.mat[cur_gene_name,] # Take only relevant genes
     }
 
-    for(k in cells_ind){ # loop on cell types . 
+    for(k in cells_ind){ # loop on cell types. 
       print(paste0("Analyze cell type: ", expr.stats$cell_types_categories[k]))
       for(feature.type in feature.types)
       {
@@ -118,21 +134,6 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
             next
           }
           
-#          print("len of features vector:")
-#          print(length(names(cur_gene_features[[feature.type]])))
-#          print("len of gene-expressed filtered:")
-#          print(length(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)] ))
-#          print("Gene expressed filtered:")
-#          print(rownames(expr.stats$DF.expr.stats[[k]])[which(cur.gene.ind)])
-          
-#          print("cell ind:")
-#          print(k)
-#          print("Do cor test:")
-#          print(age.group)
-#          print("feature:")
-#          print(feature.type)
-#          print("len intersect:")
-#          print(length(I_names))
           DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
                                   paste0(feature.type, "_", age.group, "_cor"))] <- 
             cor.test(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)], 
@@ -151,14 +152,24 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
         if(length(which(fc.gene.ind)) == 0)  # no genes, probably bad data
           next
         
-#        print("Do cor test again:")
-        
         DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_pval"), paste0(feature.type, "_fc_cor"))] <- 
-          cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+        SP = cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
                          expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
                    cur_gene_features[[feature.type]][I_names],  
                    use = "complete.obs", method = "spearman")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
-
+        PEARSON =  cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+                            expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
+                      cur_gene_features[[feature.type]][I_names],  
+                      use = "complete.obs", method = "pearson")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
+        x = log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")])
+        y = cur_gene_features[[feature.type]][I_names]
+        finite.gene.inds = !(is.infinite(x) | is.infinite(y))
+        PEARSON = cor(x[finite.gene.inds], y[finite.gene.inds], use = "pairwise.complete.obs")
+        PEARSON =  cor(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+                                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
+                            cur_gene_features[[feature.type]][I_names], use = "pairwise.complete.obs")  
+                            
 #        print("Do cor test abs:")
         
         # Mean expression vs. Absolute fold-change and selection correlation
@@ -219,40 +230,9 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
           print("cur_expr_covariates")
           print(cur_expr_covariates)
         }
-#        print("I_names length:")
-#        print(length(I_names))
-#        print("Age group:")
-#        print(age.group)
-#        print("Y data:")
-#        print(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)])
-#        print("X data:")
-#        print(scale(cur_reg_covariates_mat))
-#        print("cur_gene_features_mat")
-#        print(cur_gene_features_mat)
-#        print("expr.stats$DF.expr.stats[[k]][I_names,cur_expr_covariates]")
-#        print(expr.stats$DF.expr.stats[[k]][I_names,cur_expr_covariates])
-        # Normalize features !!!! scale data-frame
-#        print(paste("Run reg:", age.group))
         reg.model <- lm(expr.stats$DF.expr.stats[[k]][I_names, paste0(expression.stat.y, "_", age.group)] ~ ., 
                         data = as.data.frame(scale(cur_reg_covariates_mat)), na.action=na.exclude)
-#                          as.data.frame(cur_gene_features_mat[which(cur.gene.ind),]))  # Take log of fold-change. Maybe take difference? (they're after log)
-#        print(paste("Finished Run reg:", age.group))
-        
-#        print("beta inds:")
-#        print(beta.inds)
-#        print("beta pvals inds:")
-#        print(beta.pvals.inds)
-        
-#        print(paste("reg.ctr: ", reg.ctr, " n.features: ", n.features))
-#        print("Set reg. beta columns:")
-#        print(beta.inds[seq(reg.ctr, 5*n.features, 5)])
-#        print(colnames(DF_cor)[beta.inds[seq(reg.ctr, 5*n.features, 5)]])
-#        print("Set reg. beta-pvals columns:")
-#        print(beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)])
-#        print(colnames(DF_cor)[beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)]])
-#        print("Reg model coefficients:")
-#        print(reg.model$coefficients )
-        
+
 #          print("coefficients inds: ")
 #        print(beta.inds[seq(reg.ctr, 5*n.features, 5)])
         DF_cor[cell.type.ctr, beta.inds[seq(reg.ctr, 5*n.features, 5)]] <- reg.model$coefficients[2:(1+n.features)] # [-1] # get coefficients (excluding intercept)

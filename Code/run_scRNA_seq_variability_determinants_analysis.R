@@ -85,13 +85,14 @@ if(for.paper)
         paper.DF[[ctr]][[i]] = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
                                                               expression.stat.x = paper.expression.stat.x[i], 
                                                               expression.stat.y = paper.expression.stat.y[i], 
-                                                              force.rerun = FALSE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
-      ctr <- ctr + 1
+                                                              force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+      ctr <- ctr + 1 # counter that runs on data types
     }
   
   if(reg.summary.tables)   # take results structure paper.DF and make table with numbers of young/old positive/negative coefficients
   {
-    post_process_reg_table(paper.DF, paste0(res.dir, "/summary_table.csv")) # post-processing 
+    results.DF.beta <- post_process_reg_table(paper.DF, paste0(res.dir, "/summary_table_beta.csv"), use.beta = TRUE) # post-processing 
+    results.DF.cor <- post_process_reg_table(paper.DF, paste0(res.dir, "/summary_table_cor.csv"), use.beta = FALSE) # post-processing 
   }
   
   if(reg.figures) # plot figures for paper 
