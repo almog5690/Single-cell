@@ -698,4 +698,34 @@ post_process_reg_table <- function(paper.DF, output.df.file.name = "", use.beta 
   
 }
 
-
+# Mean filtering function
+gene.filtering = function(gene_mean_old, gene_mean_young, gene_mean_all = NULL,
+                          expression.thresh = 0.2, FC_filter = F, SC, CT_name, 
+                          Old.indicator, Young.indicator){
+  if(FC_filter){ # FC-filtering using FindMarkers function
+    Idents(SC) <- "Cells"
+    CT_SC = subset(SC,idents = CT_name) # current cell type Seurat object
+    
+    # if(all(is.na( Cells(CT_SC)[CT_SC$age %in% Old.indicator]))) next()
+    # Clustering using FindMarkers
+    age_clusters = FindMarkers(CT_SC,ident.1 = Cells(CT_SC)[CT_SC$age %in% Old.indicator],ident.2 = Cells(CT_SC)[CT_SC$age %in% Young.indicator],
+                               test.use = "wilcox",assay = "RNA",slot = "data",pseudocount.use = 0.1,verbose = T,min.pct = 0.5,logfc.threshold = log2(1.25))
+    age_clusters$bh_p_val = p.adjust(age_clusters$p_val,method = "BH") # Adjusted p_values
+    gene_mean_FC = age_clusters$avg_log2FC # FC estimations
+    names(gene_mean_FC) = toupper(row.names(age_clusters)) # gene names
+    
+    return(gene_mean_FC[age_clusters$bh_p_val <= 0.1])
+    
+  } else { # Mean filtering (young/old or all)
+    ages_mean = (gene_mean_old + gene_mean_young)/2 # genes averages average  
+    
+    if(is.null(gene_mean_all)){ # young/old filtering
+      return(c("Young" = gene_mean_young[which(ages_mean > expression.thresh)], 
+               "Old" = gene_mean_old[which(ages_mean > expression.thresh)]))
+      
+    } else { # all filteering
+      return(gene_mean_all[which(ages_mean > expression.thresh)])
+    }
+    
+  }
+}

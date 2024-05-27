@@ -80,6 +80,7 @@ filter.params$min.cells.total <- 100
 filter.params$min.cells.per.age <- 20
 filter.params$min.genes.for.reg <- 50
 filter.params$pseudo.count <- 1 # for regularization
+filter.params$expression.thresh = 0.2
 
 
 # Include all needed source files 
