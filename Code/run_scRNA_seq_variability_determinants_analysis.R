@@ -1,21 +1,26 @@
 #!/usr/bin/env Rscript
-# Start with script with hard-coded arguments. Then later run this with command line arguments 
+# Main analysis script for single-cell gene-expression variability determinants
 
-# New: read from the command line !!! 
-args = commandArgs(trailingOnly=TRUE)
-if(!exists("user.name"))  # set default values 
-  user.name = "Or" #  "Almog"  # Or # Unix 
-if(!exists("data.type"))  # set default values 
-  data.type = "TM.facs"  # Choose one type for analysis (can later loop over multiple datasets)
-if(user.name == "Almog")
-  main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-if(user.name == "Or")
-  main.dir = "C:/Code/Github/Single-cell/" 
-# Change to your local path. This path should be used everywhere as the main source path
-if(user.name == "Unix")
-  main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-code.dir <- paste0(main.dir, 'Code/')  # src files 
-setwd(code.dir)
+# =============================================================================
+# ENVIRONMENT CONFIGURATION - Set run.env before running
+# Options: "or.windows", "or.wsl", "or.cluster", "almog.windows"
+# =============================================================================
+if(!exists("run.env"))
+  run.env <- "or.windows"  # <-- CHANGE THIS TO SWITCH ENVIRONMENT
+
+if(!exists("data.type"))
+  data.type <- "TM.facs"
+
+# Set working directory based on environment (needed before sourcing config)
+if(run.env == "or.windows") {
+  setwd("C:/Code/Github/Single-cell/Code")
+} else if(run.env == "or.wsl") {
+  setwd("/mnt/c/Code/Github/Single-cell/Code")
+} else if(run.env == "or.cluster") {
+  setwd("/sci/labs/orzuk/orzuk/github/Single-cell/Code")
+} else if(run.env == "almog.windows") {
+  setwd("C:/Users/User/OneDrive/Documents/Github/Single-cell/Code")
+}
 
 source("scRNA_seq_config.R")
 

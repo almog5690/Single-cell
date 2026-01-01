@@ -1,14 +1,24 @@
-# Simple example of running BASiCS. Supports multiple datasets (Tabula Muris, Human data, MCA)  
+# Simple example of running BASiCS. Supports multiple datasets (Tabula Muris, Human data, MCA)
 # Main script for analysis of single-cell gene-expression data
 print("R Version:")
 print(version)
 print("Start script:")
 
-# Set paths 
-user.name = "Unix" #  "Almog"  # Or # Unix 
-main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-code.dir <- paste0(main.dir, 'Code/')  # src files 
-setwd(code.dir)
+# Environment config - default to cluster for commandline usage
+if(!exists("run.env"))
+  run.env <- "or.cluster"  # Options: or.windows, or.wsl, or.cluster, almog.windows
+
+# Set working directory based on environment
+if(run.env == "or.windows") {
+  setwd("C:/Code/Github/Single-cell/Code")
+} else if(run.env == "or.wsl") {
+  setwd("/mnt/c/Code/Github/Single-cell/Code")
+} else if(run.env == "or.cluster") {
+  setwd("/sci/labs/orzuk/orzuk/github/Single-cell/Code")
+} else if(run.env == "almog.windows") {
+  setwd("C:/Users/User/OneDrive/Documents/Github/Single-cell/Code")
+}
+
 print(paste0("Current dir: ", getwd()))
 source('scRNA_seq_config.R')
 source("BASiCSAnalysis.R")

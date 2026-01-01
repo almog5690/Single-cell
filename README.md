@@ -26,6 +26,22 @@ The main code is in the `Code/` directory:
 
 **Note:** The `Code/old_src/` directory contains deprecated files that are no longer used. These are kept for reference only - do not use or modify them.
 
+## Environment Configuration
+The code supports multiple running environments. Set the `run.env` variable before sourcing `scRNA_seq_config.R`:
+
+| Environment | Description |
+|-------------|-------------|
+| `or.windows` | Or Zuk, Windows local (default) |
+| `or.wsl` | Or Zuk, WSL (Windows Subsystem for Linux) |
+| `or.cluster` | Or Zuk, Unix cluster |
+| `almog.windows` | Almog Yair, Windows local |
+
+Example usage:
+```r
+run.env <- "or.wsl"  # Set before sourcing config
+source("scRNA_seq_config.R")
+```
+
 ## Workflow
 First data pre-processing is performed on read counts data files (filtering of cells and genes, normalization, etc.), by running the preprocessing pipeline.
 

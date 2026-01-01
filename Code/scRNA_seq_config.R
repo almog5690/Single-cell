@@ -8,45 +8,49 @@ library(ggpointdensity)
 library(ggpubr)
 
 
-if(!exists('user.name'))  # set default values 
-  user.name = "Or" #  "Almog"  # Or # Unix 
-if(!exists('data.type'))  # set default values 
-  data.type = "TM.droplet"  # Choose one type for analysis (can later loop over multiple datasets)
+# =============================================================================
+# ENVIRONMENT CONFIGURATION - Change this single variable to switch environments
+# =============================================================================
+# Options:
+#   "or.windows"  - Or Zuk, Windows local
+#   "or.wsl"      - Or Zuk, WSL (Windows Subsystem for Linux)
+#   "or.cluster"  - Or Zuk, Unix cluster
+#   "almog.windows" - Almog Yair, Windows local
+# =============================================================================
+if(!exists('run.env'))
+  run.env <- "or.windows"  # <-- CHANGE THIS TO SWITCH ENVIRONMENT
 
-# Data types
-data.types = c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC", "MCA") 
-data.dirs = c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno", "HumanBlood", "MCA")   # Names of directories 
-names(data.dirs) = data.types 
-processed.files.str <- c("facs", "drop", "rat", "anno", "SC", "MCA") # match these (then rds)
-names(processed.files.str) = data.types
+if(!exists('data.type'))
+  data.type <- "TM.droplet"
 
+# Data types (shared across all environments)
+data.types <- c("TM.facs", "TM.droplet", "CR.Rat", "Age.Anno", "Blood_SC", "MCA")
+data.dirs <- c("TabulaMuris", "TabulaMuris", "RatCR", "HumanAgeAnno", "HumanBlood", "MCA")
+names(data.dirs) <- data.types
+processed.files.str <- c("facs", "drop", "rat", "anno", "SC", "MCA")
+names(processed.files.str) <- data.types
 
-
-
-# Main script for analysis of single-cell gene-expression data
-if(user.name == "Almog")
-{
-  main.dir = "C:/Users/User/OneDrive/Documents/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  main.data.dir = "C:/Users/User/Google Drive/SingleCell/"  # Change to directory with all the data
-} else # Or 
-if(user.name == "Or")
-{
-#  G:\.shortcut-targets-by-id\1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx\SingleCell   
-#  G:\.shortcut-targets-by-id\1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx\SingleCell\GeneLevelData  
-  # Directories 
-  main.dir = "C:/Code/Github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  #  main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/" 
-#  main.data.dir = "G:/My Drive/Students/AlmogYair/SingleCell/"
-  main.data.dir = "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/"  # give shortcut (problem: may change!)
-  #   paste0(main.dir, 'Data/', data.dirs[data.type], '/') # Can change so code and data may be at different locations. Also change per dataset
+# Set paths based on environment
+if(run.env == "or.windows") {
+  main.dir <- "C:/Code/Github/Single-cell/"
+  main.data.dir <- "G:/.shortcut-targets-by-id/1Kq8HX8zZy_lm6GvFIGkmL5c42sEU3VBx/SingleCell/"
+} else if(run.env == "or.wsl") {
+  main.dir <- "/mnt/c/Code/Github/Single-cell/"
+  main.data.dir <- "/mnt/c/Code/Github/Single-cell/"  # Data in same repo for WSL
+} else if(run.env == "or.cluster") {
+  main.dir <- "/sci/labs/orzuk/orzuk/github/Single-cell/"
+  main.data.dir <- "/sci/labs/orzuk/orzuk/projects/SingleCell/"
+} else if(run.env == "almog.windows") {
+  main.dir <- "C:/Users/User/OneDrive/Documents/Github/Single-cell/"
+  main.data.dir <- "C:/Users/User/Google Drive/SingleCell/"
+} else {
+  stop(paste("Unknown run.env:", run.env,
+             "\nValid options: or.windows, or.wsl, or.cluster, almog.windows"))
 }
-if(user.name == "Unix")
-{
-  main.dir = "/sci/labs/orzuk/orzuk/github/Single-cell/"  # Change to your local path. This path should be used everywhere as the main source path
-  main.data.dir = "/sci/labs/orzuk/orzuk/projects/SingleCell/"  # Change to directory with all the data
-}
-code.dir <- paste0(main.dir, 'Code/')  # src files 
-gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')  
+
+# Derived paths (computed from main.dir and main.data.dir)
+code.dir <- paste0(main.dir, 'Code/')
+gene.data.dir <- paste0(main.data.dir, 'GeneLevelData/')
 res.dir <- paste0(main.data.dir, "Results")
 
 
