@@ -14,17 +14,26 @@ Download the gene selection data from gnomad called 'gnomad.v2.1.1.lof_metrics.b
 and the gene length data from "mart_export.txt". 
 
 
+## Code Structure
+The main code is in the `Code/` directory:
+- `run_scRNA_seq_variability_determinants_analysis.R` - Main entry point for the analysis pipeline
+- `scRNA_seq_config.R` - Configuration (paths, parameters, data types)
+- `scRNA_seq_utilities.R` - Shared utility functions
+- `scRNA_seq_preprocess.R` - Data preprocessing
+- `ExpressionRegressionAnalysis.R` - Regression analysis for both mean and overdispersion
+- `BASiCSAnalysis.R` - BASiCS statistical modeling
+- `MeanFigures.R`, `OverdispersionFigures.R` - Figure generation
+
+**Note:** The `Code/old_src/` directory contains deprecated files that are no longer used. These are kept for reference only - do not use or modify them.
+
 ## Workflow
-First data pre-processing is performed on read counts data files (filtering of cells and genes, normalization, atc.), by running the commands in the files 
-'data pre-processing facs.R' and 'data pre-processing droplet.R'. Both files contaiins a for loop which perform the pre-processing to every tissue individually.
+First data pre-processing is performed on read counts data files (filtering of cells and genes, normalization, etc.), by running the preprocessing pipeline.
 
-Next, analysis of the correlation between mean expression and selection for both old and young groups is performed by running the files 'Mean expression facs.R' and 'Mean expression droplet.R'.
+Next, analysis of the correlation between expression statistics (mean, overdispersion) and gene features (selection, gene length) is performed using `ExpressionRegressionAnalysis.R`.
 
-Estimation of over-dispersion for each gene in each cell using BASiCS (NOTE: the BASiCS analysis can take a lot of time: about 1 week for the entire dataset on a single laptop).
+Estimation of over-dispersion for each gene in each cell uses BASiCS (NOTE: the BASiCS analysis can take a lot of time: about 1 week for the entire dataset on a single laptop).
 
-After running the BASiCS analysis we can perform our over-dispersion analysis, by running the files commands in the files 'Over dispersion facs.R' and 'Over dispersion droplet.R'. 
-
-Running the entire pipeline produces figures showing the correlation between the different covaraites (determinents) and gene-expression over-dispersion and mean expression. Run the file 'scRNA_seq_variability_determinants_analysis.R' to run the pipeline. 
+Running the entire pipeline produces figures showing the correlation between the different covariates (determinants) and gene-expression over-dispersion and mean expression. Run the file `run_scRNA_seq_variability_determinants_analysis.R` to run the pipeline. 
 
 
 # Contact: 

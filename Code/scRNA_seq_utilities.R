@@ -1,4 +1,3 @@
-# Utilities needed for single cell analysis and visualization 
 library(readxl)
 library(GGally)
 library(dplyr)
@@ -69,27 +68,6 @@ get_tissue_file_names <- function(data.type)
   return(list(file.names = file.names, organs = organs))
 }
 
-
-# Filter cells from an expression matrix (not used yet. Should be part of analysis)
-filter_cells <- function(cell_types, young.ind, old.ind, filter.params)
-{
-  unique_cell_types = unique(cell_types)
-  n_cell_types = length(unique_cell_types)  #  max(cell_types) # Number of cell types
-  erase = vector()
-  
-  for(j in 1:n_cell_types){ # filtering cell types with less then 100 cells or less the 20 cells in each the age groups
-      ct_ind = unique_cell_types[j]
-      if(sum(cell_types==ct_ind, na.rm=TRUE) < filter.params$min.cells.total |
-         sum(cell_types==ct_ind & young.ind, na.rm=TRUE) < filter.params$min.cells.per.age |
-         sum(cell_types==ct_ind & old.ind, na.rm=TRUE) < filter.params$min.cells.per.age){
-        erase = c(erase, j)
-        next()
-      }
-  }
-  cells_ind = unique_cell_types[-erase] #  cells_ind = c(1:(n_cell_types+1))[-erase]
-  if(length(cells_ind) == 0) cells_ind = unique_cell_types # (1:(n_cell_types+1))
-  return(cells_ind) # indices of cells that we keep 
-}
 
 
 
@@ -239,7 +217,8 @@ list_to_common_dataframe <- function(l)
 # cells_ind - ??
 extract_expression_statistics <- function(data.type, organ, cell.types=c(), expression.stats = c("mean", "overdispersion"), 
                                           age.groups = c("young", "old", "all", "fc"), 
-                                          SeuratOutput=c(), BASiCSOutput = c(), fc.method = "log_old_minus_young", force.rerun = FALSE)
+                                          SeuratOutput=c(), BASiCSOutput = c(), 
+                                          fc.method = "log_old_minus_young", force.rerun = FALSE)
 {
   set_data_dirs(data.type)
   expression.statistics.outfile <- paste0(analysis.results.dir, 'expression.stats.', data.type, '.', organ, '.',
@@ -252,8 +231,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   
   if(file.exists(expression.statistics.outfile) & (force.rerun==FALSE))
   {
-    print("Loading file!")
-    print(expression.statistics.outfile)
+    print(paste0("Loading file! ", expression.statistics.outfile))
     load(expression.statistics.outfile)
     return(list(DF.expr.stats=DF.expr.stats, cell_types_categories=cell_types_categories, cells_ind=cells_ind))
   }
@@ -300,7 +278,7 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
   {
     cell_types = SeuratOutput@meta.data$CT # Cell types vector
     cell_types_categories = unique(SeuratOutput@meta.data$CT) # Cell type names. Missing variable meta.data.drop
-  } else
+  } else  # TM facs, droplet
   {
     cell_types = SeuratOutput@meta.data$cell.ontology.class # Cell types vector
     cell_types_categories = meta.data[[organ.ind]]$cell_ontology_class # Cell type names. Missing variable meta.data.drop
@@ -365,22 +343,11 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
           if(age.group == "fc")  # union young or old. fc = log(old) - log(young) 
           {
             # TODO: ENABLE READING FROM BASICS OUTPUT INSTEAD OF LOG-DIFFERENEC
-            if(fc.method == "log_old_minus_young")
-              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- log( # add regularization
-                (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_old")] + filter.params$pseudo.count) / 
-                  (DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_young")] + filter.params$pseudo.count)) # Take only filtered cells. why? 
-            if(fc.method == "seurat") # works only for mean .. 
-            {
-              DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_fc")] <- 9999 # XXX ?? ADD CODE 
-            }
-            if(fc.method == "basics") # can work for both mean and od, currently used only for od. 
-            {
-              load(BASiCS.files$test) # load BASICS object 
-              df.mean = test@Results$Mean@Table
-              df.mean$GeneName = toupper(df.mean$GeneName) # Uppercasing gene names
-              DF.expr.stats[[cell.type]][cur.gene.ind , paste0(stat, "_fc")] = df.mean$MeanFC # ?? ADD
-            }
-              
+            fc_exp = get_fold_change(DF.expr.stats[[cell.type]][, paste0(stat, "_young")], 
+                                     DF.expr.stats[[cell.type]][, paste0(stat, "_old")], 
+                                     fc.method, filter.params, stat, 
+                                     data.type, SC=SeuratOutput, CT_name=cell_types_categories[cell.type])
+            DF.expr.stats[[cell.type]][cur.gene.ind, paste0(stat, "_fc")] = fc_exp[cur.gene.ind] 
           } else             # Repeat for all age groups and features 
           {
             if(sum(cur.cell.ind) == 1)
@@ -402,7 +369,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
           # Find common gene indices, and intersect. Copy in the right order!!! 
           common.od.gene.names = intersect(toupper(names(cur.gene.ind)), toupper(df.od$GeneName))
           rownames(df.od) <- df.od$GeneName
-          DF.expr.stats[[cell.type]][common.od.gene.names  , paste0(stat, "_", age.group)] <- df.od[common.od.gene.names, od.str]  # Copy overdispersion information 
+          DF.expr.stats[[cell.type]][common.od.gene.names  , paste0(stat, "_", age.group)] <- 
+            df.od[common.od.gene.names, od.str]  # Copy overdispersion information 
           
 #          DF.expr.stats[[cell.type]][cur.gene.ind  , paste0(stat, "_", age.group)] <- df.od[cur.gene.ind, od.str]  # Copy overdispersion information 
         }
@@ -422,6 +390,8 @@ extract_expression_statistics <- function(data.type, organ, cell.types=c(), expr
 }
 
 
+
+
 # Computing density for plotting
 get_density <- function(x, y, ...) { # function for figures 4 and 5
   dens <- MASS::kde2d(x, y, ...)
@@ -433,6 +403,8 @@ get_density <- function(x, y, ...) { # function for figures 4 and 5
 
 
 # Divide to old and young in each dataset
+# Input: data type (str)
+# Output: Strings for young and old age groups
 dataset_to_age_groups <- function(data.type) { # set specific ages for all age groups in all datasets
   old_ages_2 = c()
   young_str = "young"
@@ -471,7 +443,6 @@ dataset_to_age_groups <- function(data.type) { # set specific ages for all age g
     old_ages_1 = "Old"
     test_str = "MCA"
   }
-  
   return(list(young_ages = young_ages, old_ages_1 = old_ages_1, old_ages_2 = old_ages_2, 
               test_str = test_str, young_str = young_str, old_str = old_str))
 }
@@ -698,34 +669,4 @@ post_process_reg_table <- function(paper.DF, output.df.file.name = "", use.beta 
   
 }
 
-# Mean filtering function
-gene.filtering = function(gene_mean_old, gene_mean_young, gene_mean_all = NULL,
-                          expression.thresh = 0.2, FC_filter = F, SC, CT_name, 
-                          Old.indicator, Young.indicator){
-  if(FC_filter){ # FC-filtering using FindMarkers function
-    Idents(SC) <- "Cells"
-    CT_SC = subset(SC,idents = CT_name) # current cell type Seurat object
-    
-    # if(all(is.na( Cells(CT_SC)[CT_SC$age %in% Old.indicator]))) next()
-    # Clustering using FindMarkers
-    age_clusters = FindMarkers(CT_SC,ident.1 = Cells(CT_SC)[CT_SC$age %in% Old.indicator],ident.2 = Cells(CT_SC)[CT_SC$age %in% Young.indicator],
-                               test.use = "wilcox",assay = "RNA",slot = "data",pseudocount.use = 0.1,verbose = T,min.pct = 0.5,logfc.threshold = log2(1.25))
-    age_clusters$bh_p_val = p.adjust(age_clusters$p_val,method = "BH") # Adjusted p_values
-    gene_mean_FC = age_clusters$avg_log2FC # FC estimations
-    names(gene_mean_FC) = toupper(row.names(age_clusters)) # gene names
-    
-    return(gene_mean_FC[age_clusters$bh_p_val <= 0.1])
-    
-  } else { # Mean filtering (young/old or all)
-    ages_mean = (gene_mean_old + gene_mean_young)/2 # genes averages average  
-    
-    if(is.null(gene_mean_all)){ # young/old filtering
-      return(c("Young" = gene_mean_young[which(ages_mean > expression.thresh)], 
-               "Old" = gene_mean_old[which(ages_mean > expression.thresh)]))
-      
-    } else { # all filteering
-      return(gene_mean_all[which(ages_mean > expression.thresh)])
-    }
-    
-  }
-}
+

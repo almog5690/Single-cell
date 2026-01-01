@@ -16,14 +16,19 @@ library(Seurat)
 #        - Each column corresponds to a beta/correlation coefficient, or a p-value. There are regression and correlation analyses. 
 # 
 expression_regression_analysis <- function(data.type, expression.stat.y = c("mean"), # dependent variable
-                                     expression.stat.x = "", feature.types = c("selection"), # covariates. Why two kinds? 
-                                     force.rerun = FALSE) {
+                                     expression.stat.x = "", feature.types = c("selection"), # covariates. Why two kinds?
+                                     reg.params, filter.params, force.rerun = FALSE, run.organs = NULL,
+                                     do.interaction = FALSE) {  # Test if feature effect on expression.stat.y differs by age
   # Set data directories: 
   set_data_dirs(data.type)
   reg.analysis.outfile <- paste0(analysis.results.dir, 'expr.reg.analysis.', data.type, '.', expression.stat.y, '.vs.', 
                                   paste0( expression.stat.x, collapse="_"), rep('.', min(length(expression.stat.x), 1)),
                                   paste0( feature.types, collapse="_"), '.RData')
   samples <- get_tissue_file_names(data.type)
+  
+  run.organs.ind = ifelse(is.null(run.organs), 1:length(samples$organs), match(run.organs, samples$organs))
+  
+  
   meta.data = get_meta_data(data.type)
   if(file.exists(reg.analysis.outfile) & (force.rerun==FALSE))
   {
@@ -63,25 +68,38 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       col.names <- c(col.names, c(paste0(feature.type, "_", age.group, "_beta"), 
                                   paste0(feature.type, "_", age.group, "_beta_pval")))
     }
-    col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), paste0(feature.type, "_fc_beta_pval"), 
+    col.names <- c(col.names, c(paste0(feature.type, "_fc_beta"), paste0(feature.type, "_fc_beta_pval"),
                                 paste0(feature.type, "_fc_abs_beta"), paste0(feature.type, "_fc_abs_beta_pval")))
+  }
+  # Add interaction columns if requested (tests if feature effect differs by age)
+  if(do.interaction) {
+    for(feature.type in feature.types) {
+      col.names <- c(col.names, c(paste0(feature.type, "_beta_Old"), paste0(feature.type, "_beta_Inter"),
+                                  paste0(feature.type, "_beta_Young"),
+                                  paste0(feature.type, "_pval_Old"), paste0(feature.type, "_pval_Inter"),
+                                  paste0(feature.type, "_pval_Young")))
+    }
   }
   DF_cor <- data.frame(matrix(ncol = length(col.names), nrow = 0, dimnames=list(NULL, col.names))) # start with empty data-frame. Add cell types that work
   cell.type.ctr <- 1
   if(length(expression.stat.x)==0) # load expression statistics. No expression covariates
-    expression.stats <- c(expression.stat.y) 
+    expression.stats <- c(expression.stat.y)
   else  # load expression statistics including expression covariates
     expression.stats <- c(expression.stat.y,  expression.stat.x)
+  # Interaction analysis requires mean as covariate
+  if(do.interaction && !("mean" %in% expression.stats))
+    expression.stats <- c(expression.stats, "mean")
   print("expression.stats")
   print(expression.stats)
-  for(i in 1:length(samples$organs)){  # loop on organs 
+  for(i in run.organs.ind){ #  for(i in 1:length(samples$organs)){  # loop on organs 
     print(paste0("Extract expression matrix for ", samples$organs[i]))
     
     
     # New: use utility to extract statistics: can be very heavy for overdispersion
     expr.stats <- extract_expression_statistics(data.type, samples$organs[i], 
                                                 expression.stats = expression.stats, 
-                                                SeuratOutput=c(), force.rerun = TRUE) # extract means
+                                                SeuratOutput=c(), fc.method = reg.params$fc.method, force.rerun = TRUE) # extract means # should add BASiCSOutput = c(),
+
     bad_tissue = FALSE
     print(names(expr.stats))
     check_stats = intersect(c("mean_young", "mean_old", "overdispersion_young", "overdispersion_old"), 
@@ -130,8 +148,7 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
           save(data.type, samples, i, expr.stats, expression.stats, k, expression.stat.y, age.group, cur_gene_features, feature.type, cur.gene.ind, I_names, file="BadInter.Rdata")
           if(length(which(cur.gene.ind)) == 0)  # no genes, probably bad data
           {
-#            print(paste0("Skipping age group ", age.group, ", no data!"))
-            next
+            next #            print(paste0("Skipping age group ", age.group, ", no data!"))
           }
           
           DF_cor[cell.type.ctr, c(paste0(feature.type, "_", age.group, "_pval"), 
@@ -153,22 +170,22 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
           next
         
         DF_cor[cell.type.ctr, c(paste0(feature.type, "_fc_pval"), paste0(feature.type, "_fc_cor"))] <- 
-        SP = cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+          cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
                          expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
                    cur_gene_features[[feature.type]][I_names],  
                    use = "complete.obs", method = "spearman")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
-        PEARSON =  cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
-                            expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
-                      cur_gene_features[[feature.type]][I_names],  
-                      use = "complete.obs", method = "pearson")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
-        x = log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
-                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")])
-        y = cur_gene_features[[feature.type]][I_names]
-        finite.gene.inds = !(is.infinite(x) | is.infinite(y))
-        PEARSON = cor(x[finite.gene.inds], y[finite.gene.inds], use = "pairwise.complete.obs")
-        PEARSON =  cor(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
-                                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
-                            cur_gene_features[[feature.type]][I_names], use = "pairwise.complete.obs")  
+        #        PEARSON =  cor.test(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+        #                            expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
+#                      cur_gene_features[[feature.type]][I_names],  
+#                      use = "complete.obs", method = "pearson")[3:4]  # Take log of fold-change. Maybe take difference? (they're after log)
+#        x = log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+#                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")])
+#        y = cur_gene_features[[feature.type]][I_names]
+#        finite.gene.inds = !(is.infinite(x) | is.infinite(y))
+#        PEARSON = cor(x[finite.gene.inds], y[finite.gene.inds], use = "pairwise.complete.obs")
+#        PEARSON =  cor(log(expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_old")] / 
+#                                  expr.stats$DF.expr.stats[[k]][I_names,  paste0(expression.stat.y, "_young")]), 
+#                            cur_gene_features[[feature.type]][I_names], use = "pairwise.complete.obs")  
                             
 #        print("Do cor test abs:")
         
@@ -263,7 +280,37 @@ expression_regression_analysis <- function(data.type, expression.stat.y = c("mea
       DF_cor[cell.type.ctr, beta.inds[seq(reg.ctr, 5*n.features, 5)]] <- fc.reg.model$coefficients[2:(1+n.features)] # [-1] # get p-values (excluding intercept)
       DF_cor[cell.type.ctr, beta.pvals.inds[seq(reg.ctr, 5*n.features, 5)]] <- summary(fc.reg.model)$coefficients[2:(1+n.features), 4] # [-1,4]  # get p-values (excluding intercept?)
       reg.ctr = reg.ctr + 1
-      
+
+      # Interaction analysis: test if feature effect on expression.stat.y differs by age
+      if(do.interaction) {
+        # Get expression stats for young and old
+        y_old <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_old")]
+        y_young <- expr.stats$DF.expr.stats[[k]][, paste0(expression.stat.y, "_young")]
+        mean_old <- expr.stats$DF.expr.stats[[k]][, "mean_old"]
+        mean_young <- expr.stats$DF.expr.stats[[k]][, "mean_young"]
+        gene_names <- rownames(expr.stats$DF.expr.stats[[k]])
+
+        for(feature.type in feature.types) {
+          # Call Interaction_reg from utilities
+          inter.result <- Interaction_reg(
+            Disp_old = y_old, Disp_young = y_young,
+            Mean_old = mean_old, Mean_young = mean_young,
+            gene_names = gene_names,
+            gene_feature = gene_features[[feature.type]],
+            Organ = samples$organs[i],
+            Cell_type = expr.stats$cell_types_categories[k],
+            feature_name = feature.type
+          )
+          # Store interaction results
+          DF_cor[cell.type.ctr, paste0(feature.type, "_beta_Old")] <- inter.result[[paste0(feature.type, "_beta_Old")]]
+          DF_cor[cell.type.ctr, paste0(feature.type, "_beta_Inter")] <- inter.result[[paste0(feature.type, "_beta_Inter")]]
+          DF_cor[cell.type.ctr, paste0(feature.type, "_beta_Young")] <- inter.result[[paste0(feature.type, "_beta_Young")]]
+          DF_cor[cell.type.ctr, paste0(feature.type, "_pval_Old")] <- inter.result[[paste0(feature.type, "_p_val_Old")]]
+          DF_cor[cell.type.ctr, paste0(feature.type, "_pval_Inter")] <- inter.result[[paste0(feature.type, "_p_val_Inter")]]
+          DF_cor[cell.type.ctr, paste0(feature.type, "_pval_Young")] <- inter.result[[paste0(feature.type, "_p_val_Young")]]
+        }
+      }
+
       cell.type.ctr = cell.type.ctr+1  # update counter
 #      print("Finished counter reg fc")
     }  # end loop on cell-types in tissue

@@ -83,11 +83,9 @@ filter.params$pseudo.count <- 1 # for regularization
 filter.params$expression.thresh = 0.2
 
 
-# Include all needed source files 
-source("scRNA_seq_utilities.R")
+# Include all needed source files (utilities already sourced above for set_data_dirs)
 source("scRNA_seq_preprocess.R")
-source("ExpressionRegressionAnalysis.R") 
-source("OverdispersionAnalysis.R")
+source("ExpressionRegressionAnalysis.R")  # Handles both mean and overdispersion analysis
 source("BASiCSAnalysis.R")
 source("MeanFigures.R")
 source("OverdispersionFigures.R")

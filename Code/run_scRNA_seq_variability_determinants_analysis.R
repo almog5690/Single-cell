@@ -88,7 +88,35 @@ if(for.paper)
                                                               force.rerun = TRUE) #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
       ctr <- ctr + 1 # counter that runs on data types
     }
+
   
+# TEMP DEBUG: 
+  data.type = "TM.facs"
+  i = 2 #   ctr = 2
+  reg.params = c()
+  reg.params$fc.method = "log_old_minus_young"
+#  res.df.fc.log = paper.DF[[ctr]][[i]]
+  res.df.fc.log = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+                                                        expression.stat.x = paper.expression.stat.x[i], 
+                                                        expression.stat.y = paper.expression.stat.y[i], 
+                                                        reg.params, filter.params, force.rerun = TRUE, run.organs = "Liver") #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  reg.params$fc.method = "seurat"
+  res.df.fc.seurat = expression_regression_analysis(data.type, feature.types = paper.features[[i]], 
+                                                 expression.stat.x = paper.expression.stat.x[i], 
+                                                 expression.stat.y = paper.expression.stat.y[i], 
+                                                 reg.params, filter.params, force.rerun = TRUE, run.organs = "Liver") #  c("selection", "gene.len"))  # Should be both droplet and facs in the same function
+  
+  expr.stat.log <- extract_expression_statistics(data.type, "Liver", 
+                                                                  expression.stats = expression.stat.y, 
+                                                                  SeuratOutput=c(), force.rerun = TRUE) # extract means
+  expr.stat.seurat <- extract_expression_statistics(data.type, "Liver", 
+                                                 expression.stats = expression.stat.y, 
+                                                 SeuratOutput=c(), fc.method = "seurat", force.rerun = TRUE) # extract means
+  
+  
+  
+  
+      
   if(reg.summary.tables)   # take results structure paper.DF and make table with numbers of young/old positive/negative coefficients
   {
     results.DF.beta <- post_process_reg_table(paper.DF, paste0(res.dir, "/summary_table_beta.csv"), use.beta = TRUE) # post-processing 
