@@ -33,12 +33,14 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Usage: download_aging_data.sh <dataset> [OPTIONS]
        download_aging_data.sh ALL [OPTIONS]   # submit sbatch jobs for all datasets
+       download_aging_data.sh STATUS          # show download status for all datasets
 
 Options:
   --base DIR        Output directory (default: /sci/labs/orzuk/orzuk/projects/SingleCell/Data)
   --no-extract      Skip automatic extraction of archives
   --ts-max-files N  Download only first N files (for testing large datasets)
   --overwrite       Re-download files even if they exist (default: skip existing)
+  --max-size GB     Max total size in GB before aborting (default: 100)
 
 Core scRNA datasets:
   humanImmuneAging
@@ -58,10 +60,12 @@ Proteomics aging datasets (PRIDE / ProteomeXchange unless noted):
 
 Special:
   ALL               Submit sbatch jobs for all datasets (runs in parallel on cluster)
+  STATUS            Show download status for all datasets (SUCCESS/PARTIAL/FAILED/PENDING)
 
 Notes:
 - Many proteomics datasets are huge. Use --ts-max-files N to sanity check the downloader first.
 - By default, existing files are skipped. Use --overwrite to re-download.
+- Default max size is 100GB. Use --max-size to adjust (0 = no limit).
 EOF
   exit 0
 fi
@@ -73,6 +77,7 @@ BASE="/sci/labs/orzuk/orzuk/projects/SingleCell/Data"
 DO_EXTRACT=1
 TS_MAX_FILES=0   # 0 = all files; set >0 to download only first N (debug/safety)
 OVERWRITE=0      # 0 = skip existing files; 1 = re-download everything
+MAX_SIZE_GB=100  # Max total dataset size in GB (0 = no limit)
 
 # Collect remaining args for forwarding to sbatch in ALL mode
 FORWARD_ARGS=()
@@ -83,6 +88,7 @@ while [[ $# -gt 0 ]]; do
     --no-extract) DO_EXTRACT=0; FORWARD_ARGS+=("--no-extract"); shift 1 ;;
     --ts-max-files) TS_MAX_FILES="$2"; FORWARD_ARGS+=("--ts-max-files" "$2"); shift 2 ;;
     --overwrite) OVERWRITE=1; FORWARD_ARGS+=("--overwrite"); shift 1 ;;
+    --max-size) MAX_SIZE_GB="$2"; FORWARD_ARGS+=("--max-size" "$2"); shift 2 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -90,6 +96,41 @@ done
 if [[ -z "$DATASET" ]]; then
   echo "ERROR: missing dataset" >&2
   exit 1
+fi
+
+# ---------- Handle STATUS mode: show download status for all datasets ----------
+if [[ "$DATASET" == "STATUS" ]]; then
+  echo "Download Status Report"
+  echo "======================"
+  echo "Base: $BASE"
+  echo ""
+  printf "%-45s %10s %12s %s\n" "DATASET" "STATUS" "SIZE" "LAST_RUN"
+  printf "%-45s %10s %12s %s\n" "-------" "------" "----" "--------"
+
+  for ds in "${ALL_DATASETS[@]}"; do
+    status_file="${BASE}/${ds}/.download_status"
+    raw_dir="${BASE}/${ds}/raw"
+
+    if [[ -f "$status_file" ]]; then
+      status=$(head -1 "$status_file")
+      last_run=$(sed -n '2p' "$status_file" 2>/dev/null || echo "unknown")
+    elif [[ -d "$raw_dir" ]] && [[ -n "$(ls -A "$raw_dir" 2>/dev/null)" ]]; then
+      status="PARTIAL"
+      last_run="unknown"
+    else
+      status="PENDING"
+      last_run="-"
+    fi
+
+    if [[ -d "$raw_dir" ]]; then
+      size=$(du -sh "$raw_dir" 2>/dev/null | cut -f1 || echo "0")
+    else
+      size="-"
+    fi
+
+    printf "%-45s %10s %12s %s\n" "$ds" "$status" "$size" "$last_run"
+  done
+  exit 0
 fi
 
 # ---------- Handle ALL mode: submit sbatch jobs for each dataset ----------
@@ -117,8 +158,22 @@ LOG_DIR="${BASE}/${DATASET}/logs"
 mkdir -p "$RAW_DIR" "$META_DIR" "$LOG_DIR"
 
 LOG="${LOG_DIR}/download_$(date +%Y%m%d_%H%M%S).log"
+STATUS_FILE="${BASE}/${DATASET}/.download_status"
 touch "$LOG"
 log(){ echo "[$(date +'%F %T')] $*" | tee -a "$LOG" >&2; }
+
+# Write status file: write_status SUCCESS|FAILED|PARTIAL [message]
+write_status(){
+  local status="$1"
+  local msg="${2:-}"
+  echo "$status" > "$STATUS_FILE"
+  echo "$(date +'%F %T')" >> "$STATUS_FILE"
+  [[ -n "$msg" ]] && echo "$msg" >> "$STATUS_FILE"
+  log "STATUS: $status ${msg:+($msg)}"
+}
+
+# Trap to write FAILED status on error
+trap 'write_status FAILED "script exited with error"' ERR
 
 need(){ command -v "$1" >/dev/null 2>&1 || { log "FATAL missing: $1"; exit 2; }; }
 need wget
@@ -295,10 +350,41 @@ pride_mirror_ftp_dir(){
   fi
 }
 
+pride_get_size_gb(){
+  # Query PRIDE FTP directory size (returns size in GB, approximate)
+  local ftp_dir="$1"
+  local size_bytes
+  # Use curl to get directory listing and sum sizes
+  size_bytes=$(curl -s --list-only "$ftp_dir/" 2>/dev/null \
+    | awk '{sum += $5} END {print sum}' 2>/dev/null || echo "0")
+  # If that didn't work, try wget spider
+  if [[ "$size_bytes" == "0" || -z "$size_bytes" ]]; then
+    size_bytes=$(wget --spider -r -l1 --no-parent "$ftp_dir/" 2>&1 \
+      | grep -oP 'Length: \K[0-9]+' | awk '{sum += $1} END {print sum}' || echo "0")
+  fi
+  # Convert to GB
+  echo $(( (${size_bytes:-0} + 536870912) / 1073741824 ))  # round to nearest GB
+}
+
 pride_download_pxd(){
   local pxd="$1"
   local ym="$2" # yyyy/mm
   local ftp_dir="ftp://ftp.pride.ebi.ac.uk/pride/data/archive/${ym}/${pxd}"
+
+  # Size check (if MAX_SIZE_GB > 0)
+  if [[ "$MAX_SIZE_GB" -gt 0 ]]; then
+    log "Checking dataset size (limit: ${MAX_SIZE_GB}GB)..."
+    local size_gb
+    size_gb=$(pride_get_size_gb "$ftp_dir")
+    log "Estimated size: ${size_gb}GB"
+    if [[ "$size_gb" -gt "$MAX_SIZE_GB" ]]; then
+      log "ABORT: Dataset size (${size_gb}GB) exceeds limit (${MAX_SIZE_GB}GB)"
+      log "Use --max-size to increase limit or --max-size 0 to disable"
+      write_status FAILED "size ${size_gb}GB exceeds limit ${MAX_SIZE_GB}GB"
+      exit 10
+    fi
+  fi
+
   pride_mirror_ftp_dir "$ftp_dir" "$RAW_DIR"
 }
 
@@ -383,6 +469,7 @@ log "=== download_aging_data start ==="
 log "dataset=$DATASET"
 log "raw_dir=$RAW_DIR"
 log "overwrite=$([[ $OVERWRITE -eq 1 ]] && echo yes || echo no)"
+log "max_size=${MAX_SIZE_GB}GB"
 log "log=$LOG"
 
 case "$DATASET" in
@@ -440,4 +527,11 @@ esac
 
 log "Top-level raw listing:"
 ls -lh "$RAW_DIR" | head -n 80 | tee -a "$LOG" >/dev/null || true
+
+# Calculate final size
+FINAL_SIZE=$(du -sh "$RAW_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+log "Final size: $FINAL_SIZE"
+
+# Write success status
+write_status SUCCESS "size=$FINAL_SIZE"
 log "=== download_aging_data DONE dataset=$DATASET ==="
