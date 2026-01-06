@@ -4,17 +4,41 @@ set -euo pipefail
 # Unified downloader for aging datasets (scRNA + proteomics).
 #
 # Usage:
-#   ./download_aging_data.sh <dataset> [--base DIR] [--no-extract] [--ts-max-files N]
+#   ./download_aging_data.sh <dataset> [--base DIR] [--no-extract] [--ts-max-files N] [--overwrite]
+#   ./download_aging_data.sh ALL [--base DIR] ...   # submits sbatch jobs for all datasets
 #
 # Design goals:
 # - Same CLI for all datasets.
 # - Dataset-specific messy details live inside this script.
 # - Robust logging and resumable downloads.
 
+# List of all available datasets (used by ALL mode)
+ALL_DATASETS=(
+  humanImmuneAging
+  ratCR
+  tabulaSapiens_v2
+  macaque_30tissues_PXD066108
+  mouse_41organs_8tp_PR_PXD053154
+  mouse_10organs_4to20mo_PXD047296
+  rat_brain_liver_transcriptome_proteome_PXD002467
+  mouse_aging_lung_scRNA_proteome_PXD012307
+  human_plasma_age_PXD016199
+  human_plasma_age_pred_PXD028281
+  human_skin_young_old_PXD018430
+  mouse_8organs_lifestages_PXD058684_jpost
+)
+
 # Handle --help early, before any directory operations
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
-Usage: download_aging_data.sh <dataset> [--base DIR] [--no-extract] [--ts-max-files N]
+Usage: download_aging_data.sh <dataset> [OPTIONS]
+       download_aging_data.sh ALL [OPTIONS]   # submit sbatch jobs for all datasets
+
+Options:
+  --base DIR        Output directory (default: /sci/labs/orzuk/orzuk/projects/SingleCell/Data)
+  --no-extract      Skip automatic extraction of archives
+  --ts-max-files N  Download only first N files (for testing large datasets)
+  --overwrite       Re-download files even if they exist (default: skip existing)
 
 Core scRNA datasets:
   humanImmuneAging
@@ -32,8 +56,12 @@ Proteomics aging datasets (PRIDE / ProteomeXchange unless noted):
   human_skin_young_old_PXD018430
   mouse_8organs_lifestages_PXD058684_jpost (jPOST entry JPST003472; very large)
 
+Special:
+  ALL               Submit sbatch jobs for all datasets (runs in parallel on cluster)
+
 Notes:
 - Many proteomics datasets are huge. Use --ts-max-files N to sanity check the downloader first.
+- By default, existing files are skipped. Use --overwrite to re-download.
 EOF
   exit 0
 fi
@@ -44,12 +72,17 @@ shift || true
 BASE="/sci/labs/orzuk/orzuk/projects/SingleCell/Data"
 DO_EXTRACT=1
 TS_MAX_FILES=0   # 0 = all files; set >0 to download only first N (debug/safety)
+OVERWRITE=0      # 0 = skip existing files; 1 = re-download everything
+
+# Collect remaining args for forwarding to sbatch in ALL mode
+FORWARD_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --base) BASE="$2"; shift 2 ;;
-    --no-extract) DO_EXTRACT=0; shift 1 ;;
-    --ts-max-files) TS_MAX_FILES="$2"; shift 2 ;;
+    --base) BASE="$2"; FORWARD_ARGS+=("--base" "$2"); shift 2 ;;
+    --no-extract) DO_EXTRACT=0; FORWARD_ARGS+=("--no-extract"); shift 1 ;;
+    --ts-max-files) TS_MAX_FILES="$2"; FORWARD_ARGS+=("--ts-max-files" "$2"); shift 2 ;;
+    --overwrite) OVERWRITE=1; FORWARD_ARGS+=("--overwrite"); shift 1 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -57,6 +90,25 @@ done
 if [[ -z "$DATASET" ]]; then
   echo "ERROR: missing dataset" >&2
   exit 1
+fi
+
+# ---------- Handle ALL mode: submit sbatch jobs for each dataset ----------
+if [[ "$DATASET" == "ALL" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  SBATCH_SCRIPT="${SCRIPT_DIR}/download_aging_data.sbatch"
+
+  if [[ ! -x "$SBATCH_SCRIPT" ]]; then
+    echo "ERROR: sbatch script not found: $SBATCH_SCRIPT" >&2
+    exit 1
+  fi
+
+  echo "Submitting sbatch jobs for ${#ALL_DATASETS[@]} datasets..."
+  for ds in "${ALL_DATASETS[@]}"; do
+    echo "  sbatch $ds"
+    sbatch "$SBATCH_SCRIPT" "$ds" "${FORWARD_ARGS[@]}"
+  done
+  echo "Done. Use 'squeue -u \$USER' to monitor jobs."
+  exit 0
 fi
 
 RAW_DIR="${BASE}/${DATASET}/raw"
@@ -87,6 +139,13 @@ WGET_COMMON=( --continue --tries=50 --timeout=60 --wait=1 --retry-connrefused --
 download_url_to(){
   local url="$1"
   local out="$2"
+
+  # Skip if file exists and overwrite is disabled
+  if [[ $OVERWRITE -eq 0 && -s "$out" ]]; then
+    log "SKIP (exists): $(basename "$out")"
+    return 0
+  fi
+
   log "Downloading: $url"
   log " -> $out"
   mkdir -p "$(dirname "$out")"
@@ -188,8 +247,8 @@ download_from_manifest_tsv(){
     fname="${fname//\//_}"
 
     local out="${RAW_DIR}/${fname}"
-    if [[ -s "$out" ]]; then
-      log "exists: $fname"
+    if [[ $OVERWRITE -eq 0 && -s "$out" ]]; then
+      log "SKIP (exists): $fname"
     else
       download_url_to "$url" "$out"
       extract_any "$out" "$RAW_DIR"
@@ -216,16 +275,22 @@ pride_mirror_ftp_dir(){
   log "  src=$ftp_dir"
   log "  dest=$dest"
   log "  tool=$([[ $HAVE_LFTP -eq 1 ]] && echo lftp || echo wget)"
+  log "  overwrite=$([[ $OVERWRITE -eq 1 ]] && echo yes || echo no)"
 
   if [[ $HAVE_LFTP -eq 1 ]]; then
     if [[ "$TS_MAX_FILES" -gt 0 ]]; then
       log "WARN: --ts-max-files is not enforced for lftp mirror (depends on lftp version)."
     fi
+    # --only-newer: skip files that exist and are same size (unless --overwrite)
+    local lftp_mirror_opts="--parallel=4"
+    [[ $OVERWRITE -eq 0 ]] && lftp_mirror_opts+=" --only-newer"
     # Disable SSL for PRIDE FTP (plain FTP)
-    lftp -e "set ftp:ssl-allow no; set net:max-retries 50; set net:timeout 60; mirror -e --parallel=4 ${ftp_dir#ftp://ftp.pride.ebi.ac.uk} \"$dest\"; bye" ftp.pride.ebi.ac.uk \
+    lftp -e "set ftp:ssl-allow no; set net:max-retries 50; set net:timeout 60; mirror ${lftp_mirror_opts} ${ftp_dir#ftp://ftp.pride.ebi.ac.uk} \"$dest\"; bye" ftp.pride.ebi.ac.uk \
       2>&1 | tee -a "$LOG"
   else
     local args=( -r -np -nH --cut-dirs=4 -R "index.html*" )
+    # -nc (no-clobber): skip existing files unless --overwrite
+    [[ $OVERWRITE -eq 0 ]] && args+=( -nc )
     wget "${WGET_COMMON[@]}" "${args[@]}" -P "$dest" "$ftp_dir/" 2>&1 | tee -a "$LOG"
   fi
 }
@@ -300,8 +365,8 @@ jpost_download_from_manifest(){
   tail -n +2 "$manifest" | while IFS=$'\t' read -r name url; do
     [[ -z "$url" ]] && continue
     local out="${RAW_DIR}/${name}"
-    if [[ -s "$out" ]]; then
-      log "exists: $name"
+    if [[ $OVERWRITE -eq 0 && -s "$out" ]]; then
+      log "SKIP (exists): $name"
     else
       download_url_to "$url" "$out"
       extract_any "$out" "$RAW_DIR"
@@ -317,6 +382,7 @@ jpost_download_from_manifest(){
 log "=== download_aging_data start ==="
 log "dataset=$DATASET"
 log "raw_dir=$RAW_DIR"
+log "overwrite=$([[ $OVERWRITE -eq 1 ]] && echo yes || echo no)"
 log "log=$LOG"
 
 case "$DATASET" in
